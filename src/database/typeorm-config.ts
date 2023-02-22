@@ -9,7 +9,6 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
   createTypeOrmOptions(): TypeOrmModuleOptions {
     return {
       type: this.configService.get('DATABASE_TYPE'),
-      url: this.configService.get('database.url'),
       host: this.configService.get('DATABASE_HOST'),
       port: this.configService.get('DATABASE_PORT'),
       username: this.configService.get('DATABASE_USERNAME'),

@@ -1,4 +1,6 @@
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
+import { TrelloStrategy } from './strategy/trello-strategy';
 import { TrelloService } from './trello.service';
 
 describe('TrelloService', () => {
@@ -6,7 +8,7 @@ describe('TrelloService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [TrelloService],
+      providers: [TrelloService, TrelloStrategy, ConfigService],
     }).compile();
 
     service = module.get<TrelloService>(TrelloService);
