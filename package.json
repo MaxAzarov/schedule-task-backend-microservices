@@ -22,6 +22,7 @@
     "check-ts-files": "bash ./scripts/check-ts-files.sh"
   },
   "dependencies": {
+    "@nestjs/axios": "^2.0.0",
     "@nestjs/common": "^9.0.0",
     "@nestjs/config": "^2.3.1",
     "@nestjs/core": "^9.0.0",

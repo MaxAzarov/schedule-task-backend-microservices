@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as oauth from 'oauth';
+import * as url from 'url';
 
 @Injectable()
 export class TrelloStrategy {
-  // private readonly oauthClient: oauth.OAuth;
   public readonly oauthClient: oauth.OAuth;
   public secret: string;
 
@@ -40,20 +40,13 @@ export class TrelloStrategy {
     return redirectUrl;
   }
 
-  async getUserTokens(url: string) {
-    const [, data] = url.split('?');
-
-    const splittedData = data.split('&');
-
-    const requestToken = splittedData[0].replace('oauth_token=', '');
-    const verifier = splittedData[1].replace('oauth_verifier=', '');
-
-    const requestTokenSecret = this.secret;
+  async getUserTokens(reqUrl: string) {
+    const data = url.parse(reqUrl, true).query;
 
     return await this.getAccessToken(
-      requestToken,
-      requestTokenSecret,
-      verifier,
+      data.oauth_token as string,
+      this.secret,
+      data.oauth_verifier as string,
     );
   }
 
