@@ -1,3 +1,4 @@
+import { HttpModule } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TrelloStrategy } from './strategy/trello-strategy';
@@ -9,6 +10,7 @@ describe('TrelloController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [HttpModule],
       controllers: [TrelloController],
       providers: [TrelloService, TrelloStrategy, ConfigService],
     }).compile();
