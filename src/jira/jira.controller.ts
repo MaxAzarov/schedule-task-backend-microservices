@@ -17,4 +17,34 @@ export class JiraController {
   async authCallback(@Req() req) {
     this.jiraService.callback(req.url);
   }
+
+  @Get('boards')
+  async getBoards() {
+    this.jiraService.getBoards('', '');
+  }
+
+  @Get('project')
+  async getProjectDetails() {
+    this.jiraService.getProjectDetails('', '', '');
+  }
+
+  @Get('issues')
+  async getAllIssues() {
+    this.jiraService.getAllIssues('', '');
+  }
+
+  @Get('project/statuses')
+  async getAllProjectStatuses() {
+    this.jiraService.getProjectStatus('', '', '');
+  }
+
+  @Get('project/user/issues')
+  async getAllUsersIssuesInStatus() {
+    this.jiraService.getAllUsersIssuesInStatus('', '', '', '');
+  }
+
+  @Get('me')
+  async me() {
+    this.jiraService.me('');
+  }
 }
