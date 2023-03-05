@@ -1,7 +1,9 @@
 import { ApiTags } from '@nestjs/swagger/dist';
-import { Controller, Get, Req, Res } from '@nestjs/common';
+import { Controller, Get, Post, Req, Res } from '@nestjs/common';
 
 import { JiraService } from './jira.service';
+import { HttpCode } from '@nestjs/common/decorators';
+import { HttpStatus } from '@nestjs/common/enums';
 
 @ApiTags('jira')
 @Controller({ path: 'jira' })
@@ -41,6 +43,19 @@ export class JiraController {
   @Get('project/user/issues')
   async getAllUsersIssuesInStatus() {
     this.jiraService.getAllUsersIssuesInStatus('', '', '', '');
+  }
+
+  @Post('webhook')
+  async createWebhook() {
+    this.jiraService.createWebhook('FIRST', 'In Progress');
+  }
+
+  @Post('webhook/callback')
+  @HttpCode(HttpStatus.OK)
+  async handleWebhookpost(@Req() req, @Res() res) {
+    const callbackData = req.body;
+
+    res.json({ ok: 'ok' });
   }
 
   @Get('me')

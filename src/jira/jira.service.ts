@@ -5,8 +5,10 @@ import { JiraStrategy } from './jira-strategy/jira-strategy';
 import { UserInfo } from './types/UserInfo';
 import { Project } from './types/Project';
 import { ProjectDetails } from './types/ProjectDetails';
-import { Issues } from './types/Issues';
+import { IssuesPaginated } from './types/Issues';
 import { ProjectStatus } from './types/ProjectStatuses';
+import { ConfigService } from '@nestjs/config';
+import { Webhook } from './types/Webhook';
 
 /**
  * flow:
@@ -20,6 +22,7 @@ import { ProjectStatus } from './types/ProjectStatuses';
 export class JiraService {
   constructor(
     private readonly jiraStrategy: JiraStrategy,
+    private readonly configService: ConfigService,
     private readonly http: HttpService,
   ) {}
 
@@ -91,7 +94,7 @@ export class JiraService {
   }
 
   async getAllIssues(userId: string, token: string) {
-    const response = await firstValueFrom<Issues[]>(
+    const response = await firstValueFrom<IssuesPaginated>(
       this.http
         .get(`https://api.atlassian.com/ex/jira/${userId}/rest/api/3/search`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -110,12 +113,50 @@ export class JiraService {
   ) {
     const jqlQuery = `assignee = currentUser() AND status = "${status}" AND project = "${project}"`;
 
-    const response = await firstValueFrom<Issues[]>(
+    const response = await firstValueFrom<IssuesPaginated>(
       this.http
         .get(`https://api.atlassian.com/ex/jira/${userId}/rest/api/3/search`, {
           headers: { Authorization: `Bearer ${token}` },
           params: { jql: jqlQuery },
         })
+        .pipe(map((x) => x.data)),
+    );
+
+    return response;
+  }
+
+  async createWebhook(project: string, status: string) {
+    const webhookCallback = this.configService.get<string>(
+      'JIRA_WEBHOOK_CALLBACK',
+    );
+    const jiraApiToken = this.configService.get<string>('JIRA_API_TOKEN');
+
+    // const jqlQuery = `assignee = currentUser() AND status = "${status}" AND project = "${project}"`;
+    const jqlQuery = `status = "${status}" AND project = "${project}"`;
+    const jiraEmail = 'volodor05412@gmail.com';
+
+    const response = await firstValueFrom<Webhook>(
+      this.http
+        .post(
+          `https://maksym-azarov.atlassian.net/rest/webhooks/1.0/webhook`,
+          JSON.stringify({
+            name: 'my first webhook via rest 1',
+            url: webhookCallback,
+            events: ['jira:issue_created', 'jira:issue_updated'],
+            filters: {
+              'issue-related-events-section': jqlQuery,
+            },
+            excludeBody: false,
+          }),
+          {
+            headers: {
+              'Content-type': 'application/json',
+              Authorization: `Basic ${Buffer.from(
+                `${jiraEmail}:${jiraApiToken}`,
+              ).toString('base64')}`,
+            },
+          },
+        )
         .pipe(map((x) => x.data)),
     );
 
