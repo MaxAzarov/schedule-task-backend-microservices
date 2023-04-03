@@ -1,10 +1,11 @@
-import { TypeOrmConfigService } from './database/typeorm-config';
+import { TypeOrmConfigService } from './database/typeorm-config.service';
 import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerMiddleware } from './logger/logger';
 import { TrelloModule } from './trello/trello.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JiraModule } from './jira/jira.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { JiraModule } from './jira/jira.module';
     }),
     TrelloModule,
     JiraModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [],

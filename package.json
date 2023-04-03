@@ -19,7 +19,20 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prepare": "husky install",
-    "check-ts-files": "bash ./scripts/check-ts-files.sh"
+    "check-ts-files": "bash ./scripts/check-ts-files.sh",
+    "pretypeorm": "ts-node -r tsconfig-paths/register ./src/database/copy-typeorm-config.ts",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
+    "seeds": "ts-node -r tsconfig-paths/register ./node_modules/typeorm-seeding/dist/cli.js",
+    "migration:generate": "npm run typeorm -- migration:generate src/database/migrations/test.ts -p -d src/database/typeorm-config-cli.ts",
+    "migration:create": "cross-env npm run typeorm -- migration:create src/database/migrations/$npm_config_name",
+    "migration:run": "npm run typeorm -- migration:run -d src/database/typeorm-config-cli.ts",
+    "migration:revert": "npm run typeorm -- migration:revert -d src/database/typeorm-config-cli.ts",
+    "schema:drop": "npm run typeorm -- schema:drop",
+    "seed:config": "npm run seeds -- config",
+    "seed:run": "npm run seeds -- seed",
+    "typeorm1": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -p -d src/database/typeorm-config-cli.ts",
+    "typeorm1:migrate": "npm run typeorm migration:generate -- -n",
+    "typeorm1:run": "npm run typeorm migration:run"
   },
   "dependencies": {
     "@nestjs/axios": "^2.0.0",
@@ -29,11 +42,12 @@
     "@nestjs/platform-express": "^9.0.0",
     "@nestjs/swagger": "^6.2.1",
     "@nestjs/typeorm": "^9.0.1",
+    "bcryptjs": "^2.4.3",
     "oauth": "^0.10.0",
     "pg": "^8.9.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.2.0",
-    "typeorm": "^0.3.12"
+    "typeorm": "^0.3.6"
   },
   "devDependencies": {
     "@nestjs/cli": "^9.0.0",
@@ -46,6 +60,7 @@
     "@types/supertest": "^2.0.11",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
+    "cross-env": "^7.0.3",
     "eslint": "^8.0.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
