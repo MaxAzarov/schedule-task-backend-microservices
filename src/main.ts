@@ -10,6 +10,8 @@ async function bootstrap() {
 
   const port = configService.get<number | string>('PORT');
 
+  app.enableCors();
+
   const config = new DocumentBuilder()
     .setTitle('Schedule Task')
     .setDescription('Schedule Task backend part')
