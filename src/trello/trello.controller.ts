@@ -6,15 +6,20 @@ import {
   Post,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
+import { Request as IRequest } from 'express';
 import { ApiTags } from '@nestjs/swagger/dist';
 import { TrelloService } from './trello.service';
 import { WebhookCallback } from './types/WebhookCallback';
+import { IntegrationType } from 'src/integrations/types';
+import { JwtAuthGuard } from 'src/auth/guards';
 
 @ApiTags('trello')
 @Controller({ path: 'trello', version: '1' })
 export class TrelloController {
-  constructor(public readonly trelloService: TrelloService) {}
+  constructor(private readonly trelloService: TrelloService) {}
 
   @Get('auth')
   async trelloAuth(@Res() res) {
@@ -24,39 +29,44 @@ export class TrelloController {
   }
 
   @Get('auth/callback')
-  async trelloAuthCallback(@Req() req) {
-    this.trelloService.callback(req.url);
-  }
+  async trelloAuthCallback(@Req() req, @Res() res) {
+    const response = await this.trelloService.callback(req.url);
 
-  @Get('/test')
-  @HttpCode(HttpStatus.OK)
-  async test(@Res() res) {
-    res.send('test');
+    res.redirect(
+      `http://localhost:3000/profile?accessToken=${response.accessToken}&refreshToken=${response.accessTokenSecret}&type=${IntegrationType.trello}`,
+    );
   }
 
   @Get('boards')
-  async getBoards() {
-    this.trelloService.getBoards('');
+  @UseGuards(JwtAuthGuard)
+  async getBoards(@Request() request: IRequest) {
+    const userId = (request as any).user.id;
+    return this.trelloService.getBoards(userId);
   }
 
-  @Get('me')
-  async me() {
-    this.trelloService.me('');
-  }
+  // @Get('me')
+  // async me() {
+  //   this.trelloService.me('');
+  // }
 
   @Get('board/list')
-  async boardList() {
-    this.trelloService.getBoardList('', '');
+  @UseGuards(JwtAuthGuard)
+  async boardList(@Request() request: IRequest) {
+    const userId = (request as any).user.id;
+    return this.trelloService.getBoardList(userId);
   }
 
   @Get('list/cards')
+  @UseGuards(JwtAuthGuard)
   async listCards() {
     this.trelloService.createWebhook('', '');
   }
 
-  @Get('list/user/cards')
-  async userCards() {
-    this.trelloService.getUserCards('', '', '');
+  @Get('user/cards')
+  @UseGuards(JwtAuthGuard)
+  async userCards(@Request() request: IRequest) {
+    const userId = (request as any).user.id;
+    return this.trelloService.getUserCards(userId);
   }
 
   @Post('webhook')

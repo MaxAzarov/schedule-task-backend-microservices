@@ -21,6 +21,10 @@ export class AuthService {
     });
   }
 
+  async getUserFromToken(token: string) {
+    return this.jwtService.decode(token);
+  }
+
   async signIn(email: string, password: string): Promise<any> {
     const user = await this.usersService.findOne({ email });
 

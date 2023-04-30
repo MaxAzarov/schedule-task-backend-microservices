@@ -1,9 +1,11 @@
 import { ApiTags } from '@nestjs/swagger/dist';
-import { Controller, Get, Post, Req, Res } from '@nestjs/common';
-
+import { Controller, Get, Post, Req, Res, Request } from '@nestjs/common';
+import { Request as IRequest } from 'express';
 import { JiraService } from './jira.service';
-import { HttpCode } from '@nestjs/common/decorators';
+import { HttpCode, UseGuards } from '@nestjs/common/decorators';
 import { HttpStatus } from '@nestjs/common/enums';
+import { IntegrationType } from 'src/integrations/types';
+import { JwtAuthGuard } from 'src/auth/guards';
 
 @ApiTags('jira')
 @Controller({ path: 'jira' })
@@ -16,19 +18,27 @@ export class JiraController {
   }
 
   @Get('auth/callback')
-  async authCallback(@Req() req) {
-    this.jiraService.callback(req.url);
+  async authCallback(@Req() req, @Res() res) {
+    const { access_token, refresh_token } = await this.jiraService.callback(
+      req.url,
+    );
+
+    res.redirect(
+      `http://localhost:3000/profile?accessToken=${access_token}&refreshToken=${refresh_token}&type=${IntegrationType.jira}`,
+    );
   }
 
   @Get('boards')
-  async getBoards() {
-    this.jiraService.getBoards('', '');
+  @UseGuards(JwtAuthGuard)
+  async getBoards(@Request() request: IRequest) {
+    const userId = (request as any).user.id;
+    return this.jiraService.getBoards(userId);
   }
 
-  @Get('project')
-  async getProjectDetails() {
-    this.jiraService.getProjectDetails('', '', '');
-  }
+  // @Get('project')
+  // async getProjectDetails() {
+  //   this.jiraService.getProjectDetails('', '', '');
+  // }
 
   @Get('issues')
   async getAllIssues() {
@@ -36,14 +46,16 @@ export class JiraController {
   }
 
   @Get('project/statuses')
-  async getAllProjectStatuses() {
-    this.jiraService.getProjectStatus('', '', '');
+  @UseGuards(JwtAuthGuard)
+  async getAllProjectStatuses(@Request() request: IRequest) {
+    const userId = (request as any).user.id;
+    return this.jiraService.getProjectStatus(userId);
   }
 
-  @Get('project/user/issues')
-  async getAllUsersIssuesInStatus() {
-    this.jiraService.getAllUsersIssuesInStatus('', '', '', '');
-  }
+  // @Get('project/user/issues')
+  // async getAllUsersIssuesInStatus() {
+  //   this.jiraService.getAllUsersIssuesInStatus('', '', '', '');
+  // }
 
   @Post('webhook')
   async createWebhook() {
@@ -53,7 +65,7 @@ export class JiraController {
   @Post('webhook/callback')
   @HttpCode(HttpStatus.OK)
   async handleWebhookpost(@Req() req, @Res() res) {
-    const callbackData = req.body;
+    // const callbackData = req.body;
 
     res.json({ ok: 'ok' });
   }

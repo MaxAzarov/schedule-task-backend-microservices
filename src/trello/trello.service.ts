@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom, map } from 'rxjs';
 import { TrelloStrategy } from './strategy/trello-strategy';
@@ -7,6 +7,8 @@ import { Board } from './types/Board';
 import { BoardList } from './types/BoardList';
 import { Card } from './types/Card';
 import { User } from './types/User';
+import { IntegrationsService } from 'src/integrations/integrations.service';
+import { IntegrationType } from 'src/integrations/types';
 
 /**
  * flow:
@@ -21,6 +23,8 @@ export class TrelloService {
   constructor(
     private readonly trelloStrategy: TrelloStrategy,
     private readonly configService: ConfigService,
+    @Inject(forwardRef(() => IntegrationsService))
+    private readonly integrationsService: IntegrationsService,
     private readonly http: HttpService,
   ) {}
 
@@ -29,12 +33,15 @@ export class TrelloService {
   }
 
   async callback(url: string) {
-    const tokens = await this.trelloStrategy.getUserTokens(url);
-
-    return;
+    return await this.trelloStrategy.getUserTokens(url);
   }
 
-  async getBoards(token: string): Promise<Board[]> {
+  async getBoards(userId: string): Promise<Board[]> {
+    const token = await this.integrationsService.getUserAccessToken(
+      userId,
+      IntegrationType.trello,
+    );
+
     const consumerKey = this.configService.get<string>('TRELLO_CLIENT_ID');
 
     const response = await firstValueFrom<Board[]>(
@@ -62,13 +69,22 @@ export class TrelloService {
     return response;
   }
 
-  async getBoardList(boardId: string, token: string): Promise<BoardList[]> {
+  async getBoardList(userId: string): Promise<BoardList[]> {
+    const integration = await this.integrationsService.findOne({
+      userId,
+      type: IntegrationType.trello,
+    });
+
+    if (!integration || !integration.projectId) {
+      return [];
+    }
+
     const consumerKey = this.configService.get<string>('TRELLO_CLIENT_ID');
 
     const response = await firstValueFrom<BoardList[]>(
       this.http
         .get(
-          `https://api.trello.com/1/boards/${boardId}/lists?token=${token}&key=${consumerKey}`,
+          `https://api.trello.com/1/boards/${integration.projectId}/lists?token=${integration.accessToken}&key=${consumerKey}`,
         )
         .pipe(map((x) => x.data)),
     );
@@ -93,16 +109,26 @@ export class TrelloService {
     return response;
   }
 
-  async getUserCards(
-    listId: string,
-    userId: string,
-    token: string,
-  ): Promise<Card[]> {
-    const cards = await this.getListCards(listId, token);
+  async getUserCards(userId: string): Promise<Card[]> {
+    try {
+      const integration = await this.integrationsService.findOne({
+        userId,
+        type: IntegrationType.trello,
+      });
 
-    const userCards = cards.filter((c) => c.idMembers.includes(userId));
+      if (!integration || !integration.todoColumnId || !integration.clientId) {
+        return [];
+      }
 
-    return userCards;
+      const cards = await this.getListCards(
+        integration.todoColumnId,
+        integration.accessToken,
+      );
+
+      return cards.filter((c) => c.idMembers.includes(integration.clientId));
+    } catch (e) {
+      return [];
+    }
   }
 
   async createWebhook(entityId: string, token: string) {

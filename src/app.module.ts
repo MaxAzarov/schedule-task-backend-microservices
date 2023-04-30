@@ -7,6 +7,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JiraModule } from './jira/jira.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { ClsModule } from 'nestjs-cls';
+import { IntegrationsModule } from './integrations/integrations.module';
 
 @Module({
   imports: [
@@ -20,6 +22,11 @@ import { UsersModule } from './users/users.module';
     JiraModule,
     AuthModule,
     UsersModule,
+    ClsModule.forRoot({
+      global: true,
+      middleware: { mount: true },
+    }),
+    IntegrationsModule,
   ],
   controllers: [],
   providers: [],

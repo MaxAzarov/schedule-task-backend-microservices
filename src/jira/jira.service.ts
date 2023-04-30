@@ -1,14 +1,15 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { firstValueFrom, map } from 'rxjs';
 import { JiraStrategy } from './jira-strategy/jira-strategy';
-import { UserInfo } from './types/UserInfo';
+import { GetMyself, UserInfo } from './types/UserInfo';
 import { Project } from './types/Project';
-import { ProjectDetails } from './types/ProjectDetails';
 import { IssuesPaginated } from './types/Issues';
 import { ProjectStatus } from './types/ProjectStatuses';
 import { ConfigService } from '@nestjs/config';
 import { Webhook } from './types/Webhook';
+import { IntegrationsService } from 'src/integrations/integrations.service';
+import { IntegrationType } from 'src/integrations/types';
 
 /**
  * flow:
@@ -24,6 +25,8 @@ export class JiraService {
     private readonly jiraStrategy: JiraStrategy,
     private readonly configService: ConfigService,
     private readonly http: HttpService,
+    @Inject(forwardRef(() => IntegrationsService))
+    private readonly integrationsService: IntegrationsService,
   ) {}
 
   generateUrl() {
@@ -31,37 +34,55 @@ export class JiraService {
   }
 
   async callback(url: string) {
-    const tokens = await this.jiraStrategy.getUserTokens(url);
-
-    return;
+    return await this.jiraStrategy.getUserTokens(url);
   }
 
-  async getBoards(userId: string, token: string) {
-    const response = await firstValueFrom<Project[]>(
-      this.http
-        .get(`https://api.atlassian.com/ex/jira/${userId}/rest/api/2/project`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .pipe(map((x) => x.data)),
-    );
+  async getBoards(userId: string) {
+    const integration = await this.integrationsService.findOne({
+      userId,
+      type: IntegrationType.jira,
+    });
 
-    return response;
+    if (!integration) {
+      return [];
+    }
+
+    try {
+      const response = await firstValueFrom<Project[]>(
+        this.http
+          .get(
+            `https://api.atlassian.com/ex/jira/${integration.clientId}/rest/api/3/project/search`,
+            {
+              headers: {
+                'Content-type': 'application/json',
+                Authorization: `Bearer ${integration.accessToken}`,
+                Accept: 'application/json',
+              },
+            },
+          )
+          .pipe(map((x) => x.data)),
+      );
+
+      return response.values;
+    } catch (e) {
+      return [];
+    }
   }
 
-  async getProjectDetails(userId: string, key: string, token: string) {
-    const response = await firstValueFrom<ProjectDetails>(
-      this.http
-        .get(
-          `https://api.atlassian.com/ex/jira/${userId}/rest/api/3/project/${key}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        )
-        .pipe(map((x) => x.data)),
-    );
+  // async getProjectDetails(userId: string, key: string, token: string) {
+  //   const response = await firstValueFrom<ProjectDetails>(
+  //     this.http
+  //       .get(
+  //         `https://api.atlassian.com/ex/jira/${userId}/rest/api/3/project/${key}`,
+  //         {
+  //           headers: { Authorization: `Bearer ${token}` },
+  //         },
+  //       )
+  //       .pipe(map((x) => x.data)),
+  //   );
 
-    return response;
-  }
+  //   return response;
+  // }
 
   async me(token: string) {
     const response = await firstValueFrom<UserInfo[]>(
@@ -78,19 +99,50 @@ export class JiraService {
     return response;
   }
 
-  async getProjectStatus(userId: string, key: string, token: string) {
-    const response = await firstValueFrom<ProjectStatus[]>(
+  async myself(accessToken: string, clientId: string) {
+    const response = await firstValueFrom<GetMyself>(
       this.http
         .get(
-          `https://api.atlassian.com/ex/jira/${userId}/rest/api/2/project/${key}/statuses`,
+          `https://api.atlassian.com/ex/jira/${clientId}/rest/api/3/myself`,
           {
-            headers: { Authorization: `Bearer ${token}` },
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
           },
         )
         .pipe(map((x) => x.data)),
     );
 
     return response;
+  }
+
+  async getProjectStatus(userId: string) {
+    try {
+      const integration = await this.integrationsService.findOne({
+        userId,
+        type: IntegrationType.jira,
+      });
+
+      if (!integration || !integration.projectId) {
+        return [];
+      }
+
+      const response = await firstValueFrom<ProjectStatus[]>(
+        this.http
+          .get(
+            `https://api.atlassian.com/ex/jira/${integration.clientId}/rest/api/2/project/${integration.projectId}/statuses`,
+            {
+              headers: { Authorization: `Bearer ${integration.accessToken}` },
+            },
+          )
+          .pipe(map((x) => x.data)),
+      );
+
+      /// first TASK, then subtask
+      return response[0].statuses;
+    } catch (e) {}
   }
 
   async getAllIssues(userId: string, token: string) {
@@ -105,24 +157,36 @@ export class JiraService {
     return response;
   }
 
-  async getAllUsersIssuesInStatus(
-    userId: string,
-    project: string,
-    status: string,
-    token: string,
-  ) {
-    const jqlQuery = `assignee = currentUser() AND status = "${status}" AND project = "${project}"`;
+  async getAllUsersIssuesInStatus(userId: string) {
+    try {
+      const integration = await this.integrationsService.findOne({
+        userId,
+        type: IntegrationType.jira,
+      });
 
-    const response = await firstValueFrom<IssuesPaginated>(
-      this.http
-        .get(`https://api.atlassian.com/ex/jira/${userId}/rest/api/3/search`, {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { jql: jqlQuery },
-        })
-        .pipe(map((x) => x.data)),
-    );
+      if (!integration || !integration.projectId) {
+        return [];
+      }
 
-    return response;
+      // const jqlQuery = `assignee = currentUser() AND status = "${todoColumnId}" AND project = "${projectId}"`;
+      const jqlQuery = `assignee = currentUser() AND status = "To Do" AND project = "${integration.projectId}"`;
+
+      const response = await firstValueFrom<IssuesPaginated>(
+        this.http
+          .get(
+            `https://api.atlassian.com/ex/jira/${integration.clientId}/rest/api/3/search`,
+            {
+              headers: { Authorization: `Bearer ${integration.accessToken}` },
+              params: { jql: jqlQuery },
+            },
+          )
+          .pipe(map((x) => x.data)),
+      );
+
+      return response.issues;
+    } catch (e) {
+      return [];
+    }
   }
 
   async createWebhook(project: string, status: string) {
@@ -131,7 +195,6 @@ export class JiraService {
     );
     const jiraApiToken = this.configService.get<string>('JIRA_API_TOKEN');
 
-    // const jqlQuery = `assignee = currentUser() AND status = "${status}" AND project = "${project}"`;
     const jqlQuery = `status = "${status}" AND project = "${project}"`;
     const jiraEmail = 'volodor05412@gmail.com';
 
