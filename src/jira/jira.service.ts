@@ -9,7 +9,7 @@ import { ProjectStatus } from './types/ProjectStatuses';
 import { ConfigService } from '@nestjs/config';
 import { Webhook } from './types/Webhook';
 import { IntegrationsService } from 'src/integrations/integrations.service';
-import { IntegrationType } from 'src/integrations/types';
+import { EventType } from 'src/integrations/types';
 import { plainToClass } from 'class-transformer';
 import { UpdateIntegrationDto } from 'src/integrations/dto/update-integration.dto';
 
@@ -44,7 +44,7 @@ export class JiraService {
       await this.checkToken(userId);
       const integration = await this.integrationsService.findOne({
         userId,
-        type: IntegrationType.jira,
+        type: EventType.jira,
       });
 
       if (!integration) {
@@ -148,7 +148,7 @@ export class JiraService {
       await this.checkToken(userId);
       const integration = await this.integrationsService.findOne({
         userId,
-        type: IntegrationType.jira,
+        type: EventType.jira,
       });
 
       if (!integration || !integration.projectId) {
@@ -189,7 +189,7 @@ export class JiraService {
       await this.checkToken(userId);
       const integration = await this.integrationsService.findOne({
         userId,
-        type: IntegrationType.jira,
+        type: EventType.jira,
       });
 
       if (!integration || !integration.projectId) {
@@ -221,7 +221,7 @@ export class JiraService {
   public async checkToken(userId: string) {
     const integration = await this.integrationsService.findOne({
       userId,
-      type: IntegrationType.jira,
+      type: EventType.jira,
     });
 
     try {
@@ -248,7 +248,7 @@ export class JiraService {
       await this.checkToken(userId);
       const integration = await this.integrationsService.findOne({
         userId,
-        type: IntegrationType.jira,
+        type: EventType.jira,
       });
 
       if (!integration || !integration.readyColumnId) {

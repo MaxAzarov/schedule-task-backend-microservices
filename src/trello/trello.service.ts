@@ -13,7 +13,7 @@ import { BoardList } from './types/BoardList';
 import { Card } from './types/Card';
 import { User } from './types/User';
 import { IntegrationsService } from 'src/integrations/integrations.service';
-import { IntegrationType } from 'src/integrations/types';
+import { EventType } from 'src/integrations/types';
 
 /**
  * flow:
@@ -46,7 +46,7 @@ export class TrelloService {
   async getBoards(userId: string): Promise<Board[]> {
     const token = await this.integrationsService.getUserAccessToken(
       userId,
-      IntegrationType.trello,
+      EventType.trello,
     );
 
     const consumerKey = this.configService.get<string>('TRELLO_CLIENT_ID');
@@ -87,7 +87,7 @@ export class TrelloService {
   async getBoardList(userId: string): Promise<BoardList[]> {
     const integration = await this.integrationsService.findOne({
       userId,
-      type: IntegrationType.trello,
+      type: EventType.trello,
     });
 
     if (!integration || !integration.projectId) {
@@ -128,7 +128,7 @@ export class TrelloService {
     try {
       const integration = await this.integrationsService.findOne({
         userId,
-        type: IntegrationType.trello,
+        type: EventType.trello,
       });
 
       if (!integration || !integration.todoColumnId || !integration.clientId) {
@@ -182,7 +182,7 @@ export class TrelloService {
 
     const integration = await this.integrationsService.findOne({
       userId,
-      type: IntegrationType.trello,
+      type: EventType.trello,
     });
 
     if (!integration || !integration.readyColumnId) {

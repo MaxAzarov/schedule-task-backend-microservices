@@ -13,7 +13,7 @@ import { Request as IRequest } from 'express';
 import { ApiTags } from '@nestjs/swagger/dist';
 import { TrelloService } from './trello.service';
 import { WebhookCallback } from './types/WebhookCallback';
-import { IntegrationType } from 'src/integrations/types';
+import { EventType } from 'src/integrations/types';
 import { JwtAuthGuard } from 'src/auth/guards';
 
 @ApiTags('trello')
@@ -33,7 +33,7 @@ export class TrelloController {
     const response = await this.trelloService.callback(req.url);
 
     res.redirect(
-      `http://localhost:3000/profile?accessToken=${response.accessToken}&refreshToken=${response.accessTokenSecret}&type=${IntegrationType.trello}`,
+      `http://localhost:3000/profile?accessToken=${response.accessToken}&refreshToken=${response.accessTokenSecret}&type=${EventType.trello}`,
     );
   }
 

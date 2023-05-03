@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsEnum, IsString, IsEmpty } from 'class-validator';
-import { IntegrationType } from '../types';
+import { EventType } from '../types';
 
 export class CreateIntegrationDto {
-  @IsEnum(IntegrationType)
-  type: IntegrationType;
+  @IsEnum(EventType)
+  type: EventType;
 
   @ApiProperty({ example: 'accessToken' })
   @IsNotEmpty()

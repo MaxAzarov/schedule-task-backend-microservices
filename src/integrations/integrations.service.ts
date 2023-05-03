@@ -8,11 +8,13 @@ import {
 import { CreateIntegrationDto } from './dto/create-integration.dto';
 import { Integration } from './entities/Integration.entity';
 import { TrelloService } from 'src/trello/trello.service';
-import { IntegrationType } from './types';
+import { EventType } from './types';
 import { JiraService } from 'src/jira/jira.service';
 import { UpdateIntegrationDto } from './dto/update-integration.dto';
 import { normalizeTrelloEvents } from 'src/trello/helpers/normalizeEvents';
 import { normalizeJiraEvents } from 'src/jira/helpers/normalizeEvents';
+import { EventsService } from 'src/events/events.service';
+import { normalizeCustomEvents } from 'src/events/helpers/normalizeEvents';
 
 @Injectable()
 export class IntegrationsService {
@@ -21,6 +23,7 @@ export class IntegrationsService {
     @Inject(forwardRef(() => TrelloService))
     private readonly trelloService: TrelloService,
     private readonly jiraService: JiraService,
+    private readonly eventsService: EventsService,
   ) {}
 
   async create(dto: CreateIntegrationDto) {
@@ -79,10 +82,10 @@ export class IntegrationsService {
   }
 
   private async getClientIdByIntegrationType(
-    type: IntegrationType,
+    type: EventType,
     accessToken: string,
   ): Promise<{ clientId: string; email: string }> {
-    if (type === IntegrationType.jira) {
+    if (type === EventType.jira) {
       const data = await this.jiraService.me(accessToken);
 
       const { emailAddress } = await this.jiraService.myself(
@@ -91,14 +94,14 @@ export class IntegrationsService {
       );
 
       return { clientId: data[0].id, email: emailAddress };
-    } else if (type === IntegrationType.trello) {
+    } else if (type === EventType.trello) {
       const { id, email } = await this.trelloService.me(accessToken);
 
       return { clientId: id, email };
     }
   }
 
-  public async getUserAccessToken(userId: string, type: IntegrationType) {
+  public async getUserAccessToken(userId: string, type: EventType) {
     const integration = await this.findOne(
       { userId, type },
       { accessToken: true },
@@ -113,7 +116,7 @@ export class IntegrationsService {
     return integration.accessToken;
   }
 
-  public async getUserTodoColumnId(userId: string, type: IntegrationType) {
+  public async getUserTodoColumnId(userId: string, type: EventType) {
     const integration = await this.findOne(
       { userId, type },
       { todoColumnId: true },
@@ -128,7 +131,7 @@ export class IntegrationsService {
     return integration.todoColumnId;
   }
 
-  public async getClientId(userId: string, type: IntegrationType) {
+  public async getClientId(userId: string, type: EventType) {
     const integration = await this.findOne(
       { userId, type },
       { clientId: true },
@@ -143,7 +146,7 @@ export class IntegrationsService {
     return integration.clientId;
   }
 
-  public async getUserBoardId(userId: string, type: IntegrationType) {
+  public async getUserBoardId(userId: string, type: EventType) {
     const integration = await this.findOne(
       {
         userId,
@@ -162,25 +165,28 @@ export class IntegrationsService {
   }
 
   public async getUsersTasks(userId: string) {
-    const [trelloEvents, jiraEvents] = await Promise.all([
+    const [trelloEvents, jiraEvents, customEvents] = await Promise.all([
       this.trelloService.getUserCards(userId),
       this.jiraService.getAllUsersIssuesInStatus(userId),
+      this.eventsService.findMany({ userId }),
     ]);
 
-    return normalizeTrelloEvents(trelloEvents).concat(
-      normalizeJiraEvents(jiraEvents),
-    );
+    return normalizeTrelloEvents(trelloEvents)
+      .concat(normalizeJiraEvents(jiraEvents))
+      .concat(normalizeCustomEvents(customEvents));
   }
 
   public async markEventAsDone(
     userId: string,
-    type: IntegrationType,
+    type: EventType,
     cardId: string,
   ) {
-    if (type === IntegrationType.trello) {
+    if (type === EventType.trello) {
       return this.trelloService.markAsDoneCard(userId, cardId);
-    } else if (type === IntegrationType.jira) {
+    } else if (type === EventType.jira) {
       return this.jiraService.markAsDoneCard(userId, cardId);
+    } else if (type === EventType.custom) {
+      return this.eventsService.delete(+cardId);
     }
   }
 }

@@ -12,6 +12,8 @@ import { IntegrationsModule } from 'src/integrations/integrations.module';
 import { IntegrationsService } from 'src/integrations/integrations.service';
 import { JiraService } from 'src/jira/jira.service';
 import { JiraStrategy } from 'src/jira/jira-strategy/jira-strategy';
+import { EventsModule } from 'src/events/events.module';
+import { EventsService } from 'src/events/events.service';
 
 @Module({
   imports: [
@@ -20,6 +22,7 @@ import { JiraStrategy } from 'src/jira/jira-strategy/jira-strategy';
     UsersModule,
     JwtModule,
     forwardRef(() => IntegrationsModule),
+    EventsModule,
   ],
   controllers: [TrelloController],
   providers: [
@@ -30,6 +33,7 @@ import { JiraStrategy } from 'src/jira/jira-strategy/jira-strategy';
     TrelloService,
     JiraService,
     JiraStrategy,
+    EventsService,
   ],
 })
 export class TrelloModule {}

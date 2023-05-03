@@ -8,6 +8,8 @@ import { HttpModule } from '@nestjs/axios';
 import { JiraModule } from 'src/jira/jira.module';
 import { JiraService } from 'src/jira/jira.service';
 import { JiraStrategy } from 'src/jira/jira-strategy/jira-strategy';
+import { EventsService } from 'src/events/events.service';
+import { EventsModule } from 'src/events/events.module';
 
 @Module({
   controllers: [IntegrationsController],
@@ -17,7 +19,13 @@ import { JiraStrategy } from 'src/jira/jira-strategy/jira-strategy';
     TrelloStrategy,
     JiraService,
     JiraStrategy,
+    EventsService,
   ],
-  imports: [HttpModule, JiraModule, forwardRef(() => TrelloModule)],
+  imports: [
+    HttpModule,
+    JiraModule,
+    EventsModule,
+    forwardRef(() => TrelloModule),
+  ],
 })
 export class IntegrationsModule {}

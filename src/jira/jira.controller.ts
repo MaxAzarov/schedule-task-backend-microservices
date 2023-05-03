@@ -4,7 +4,7 @@ import { Request as IRequest } from 'express';
 import { JiraService } from './jira.service';
 import { HttpCode, UseGuards } from '@nestjs/common/decorators';
 import { HttpStatus } from '@nestjs/common/enums';
-import { IntegrationType } from 'src/integrations/types';
+import { EventType } from 'src/integrations/types';
 import { JwtAuthGuard } from 'src/auth/guards';
 
 @ApiTags('jira')
@@ -24,7 +24,7 @@ export class JiraController {
     );
 
     res.redirect(
-      `http://localhost:3000/profile?accessToken=${access_token}&refreshToken=${refresh_token}&type=${IntegrationType.jira}`,
+      `http://localhost:3000/profile?accessToken=${access_token}&refreshToken=${refresh_token}&type=${EventType.jira}`,
     );
   }
 

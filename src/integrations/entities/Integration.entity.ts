@@ -11,7 +11,7 @@ import {
 
 import { EntityHelper } from 'src/utils/database/entity-helper';
 import { ApiProperty } from '@nestjs/swagger';
-import { IntegrationType } from '../types';
+import { EventType } from '../types';
 import { User } from 'src/users/entities/user.entity';
 
 @Entity()
@@ -23,9 +23,9 @@ export class Integration extends EntityHelper {
 
   @Column({
     type: 'enum',
-    enum: IntegrationType,
+    enum: EventType,
   })
-  type: IntegrationType;
+  type: EventType;
 
   @ManyToOne(() => User, (user) => user)
   user: User;

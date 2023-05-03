@@ -1,6 +1,6 @@
 import { Event } from 'src/common/types';
 import { Card } from '../types/Card';
-import { IntegrationType } from 'src/integrations/types';
+import { EventType } from 'src/integrations/types';
 
 export function normalizeTrelloEvents(events: Card[]): Event[] {
   return events.map((event) => {
@@ -12,7 +12,7 @@ export function normalizeTrelloEvents(events: Card[]): Event[] {
         ? new Date(new Date(event.start).setHours(0, 0, 0, 0))
         : new Date(),
       end: event.due ? new Date(event.due) : new Date(),
-      resource: { ...event, type: IntegrationType.trello },
+      resource: { ...event, type: EventType.trello },
     };
   });
 }

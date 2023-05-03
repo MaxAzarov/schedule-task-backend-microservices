@@ -15,7 +15,7 @@ import { Request as IRequest } from 'express';
 import { CreateIntegrationDto } from './dto/create-integration.dto';
 import { IntegrationsService } from './integrations.service';
 import { JwtAuthGuard } from 'src/auth/guards';
-import { IntegrationType } from './types';
+import { EventType } from './types';
 import { UpdateIntegrationDto } from './dto/update-integration.dto';
 import { MarkEventAsDoneDto } from './dto/mark-event-as-done';
 
@@ -59,7 +59,7 @@ export class IntegrationsController {
   @Get('/:type')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  find(@Request() request: IRequest, @Param('type') type?: IntegrationType) {
+  find(@Request() request: IRequest, @Param('type') type?: EventType) {
     return this.integrationsService.findOne({
       type,
       userId: (request as any).user.id,

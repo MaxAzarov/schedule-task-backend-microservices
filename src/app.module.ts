@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ClsModule } from 'nestjs-cls';
 import { IntegrationsModule } from './integrations/integrations.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { IntegrationsModule } from './integrations/integrations.module';
       middleware: { mount: true },
     }),
     IntegrationsModule,
+    EventsModule,
   ],
   controllers: [],
   providers: [],
