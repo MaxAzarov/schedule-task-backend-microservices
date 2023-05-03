@@ -171,4 +171,16 @@ export class IntegrationsService {
       normalizeJiraEvents(jiraEvents),
     );
   }
+
+  public async markEventAsDone(
+    userId: string,
+    type: IntegrationType,
+    cardId: string,
+  ) {
+    if (type === IntegrationType.trello) {
+      return this.trelloService.markAsDoneCard(userId, cardId);
+    } else if (type === IntegrationType.jira) {
+      return this.jiraService.markAsDoneCard(userId, cardId);
+    }
+  }
 }

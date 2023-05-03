@@ -95,7 +95,7 @@ export interface Issue {
     description: null;
     customfield_10010: null;
     customfield_10014: null;
-    customfield_10015: null;
+    customfield_10015: string | null;
     customfield_10005: null;
     customfield_10006: null;
     customfield_10007: null;
@@ -103,7 +103,8 @@ export interface Issue {
     customfield_10008: null;
     aggregatetimeestimate: null;
     customfield_10009: null;
-    summary: 'asfadsf';
+    // name of issue
+    summary: string;
     creator: {
       self: 'https://api.atlassian.com/ex/jira/d28655b1-b6d5-4da7-b216-79f2c35c6efc/rest/api/3/user?accountId=5dd70c059d79ad0ef53a42b1';
       accountId: '5dd70c059d79ad0ef53a42b1';

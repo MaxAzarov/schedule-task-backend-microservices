@@ -10,6 +10,8 @@ import { ConfigService } from '@nestjs/config';
 import { Webhook } from './types/Webhook';
 import { IntegrationsService } from 'src/integrations/integrations.service';
 import { IntegrationType } from 'src/integrations/types';
+import { plainToClass } from 'class-transformer';
+import { UpdateIntegrationDto } from 'src/integrations/dto/update-integration.dto';
 
 /**
  * flow:
@@ -38,16 +40,16 @@ export class JiraService {
   }
 
   async getBoards(userId: string) {
-    const integration = await this.integrationsService.findOne({
-      userId,
-      type: IntegrationType.jira,
-    });
-
-    if (!integration) {
-      return [];
-    }
-
     try {
+      await this.checkToken(userId);
+      const integration = await this.integrationsService.findOne({
+        userId,
+        type: IntegrationType.jira,
+      });
+
+      if (!integration) {
+        return [];
+      }
       const response = await firstValueFrom<Project[]>(
         this.http
           .get(
@@ -118,8 +120,32 @@ export class JiraService {
     return response;
   }
 
+  async getTransitions(
+    accessToken: string,
+    clientId: string,
+    issueId: string,
+  ): Promise<any> {
+    const response = await firstValueFrom<GetMyself>(
+      this.http
+        .get(
+          `https://api.atlassian.com/ex/jira/${clientId}/rest/api/3/issue/${issueId}/transitions`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+          },
+        )
+        .pipe(map((x) => x.data)),
+    );
+
+    return response;
+  }
+
   async getProjectStatus(userId: string) {
     try {
+      await this.checkToken(userId);
       const integration = await this.integrationsService.findOne({
         userId,
         type: IntegrationType.jira,
@@ -146,6 +172,7 @@ export class JiraService {
   }
 
   async getAllIssues(userId: string, token: string) {
+    await this.checkToken(userId);
     const response = await firstValueFrom<IssuesPaginated>(
       this.http
         .get(`https://api.atlassian.com/ex/jira/${userId}/rest/api/3/search`, {
@@ -159,6 +186,7 @@ export class JiraService {
 
   async getAllUsersIssuesInStatus(userId: string) {
     try {
+      await this.checkToken(userId);
       const integration = await this.integrationsService.findOne({
         userId,
         type: IntegrationType.jira,
@@ -168,6 +196,7 @@ export class JiraService {
         return [];
       }
 
+      // TODO:
       // const jqlQuery = `assignee = currentUser() AND status = "${todoColumnId}" AND project = "${projectId}"`;
       const jqlQuery = `assignee = currentUser() AND status = "To Do" AND project = "${integration.projectId}"`;
 
@@ -187,6 +216,74 @@ export class JiraService {
     } catch (e) {
       return [];
     }
+  }
+
+  public async checkToken(userId: string) {
+    const integration = await this.integrationsService.findOne({
+      userId,
+      type: IntegrationType.jira,
+    });
+
+    try {
+      await this.me(integration.accessToken);
+    } catch (e) {
+      try {
+        const result = await this.jiraStrategy.renewAccessToken(
+          integration.refreshToken,
+        );
+
+        await this.integrationsService.update(
+          integration.id,
+          plainToClass(UpdateIntegrationDto, {
+            accessToken: result.access_token,
+            refreshToken: result.refresh_token,
+          }),
+        );
+      } catch (e) {}
+    }
+  }
+
+  public async markAsDoneCard(userId: string, cardId: string) {
+    try {
+      await this.checkToken(userId);
+      const integration = await this.integrationsService.findOne({
+        userId,
+        type: IntegrationType.jira,
+      });
+
+      if (!integration || !integration.readyColumnId) {
+        return null;
+      }
+      const transitions = await this.getTransitions(
+        integration.accessToken,
+        integration.clientId,
+        integration.readyColumnId,
+      );
+
+      const transitionId = transitions.transitions.find(
+        (transition) => transition.to.id === integration.readyColumnId,
+      );
+
+      const data = { transition: { id: transitionId.id } };
+
+      const response = await firstValueFrom<void>(
+        this.http
+          .post(
+            `https://api.atlassian.com/ex/jira/${integration.clientId}/rest/api/3/issue/${cardId}/transitions`,
+            data,
+            {
+              headers: {
+                'Content-type': 'application/json',
+                Authorization: `Bearer ${integration.accessToken}`,
+                Accept: 'application/json',
+              },
+            },
+          )
+          .pipe(map((x) => x.data)),
+      );
+
+      return response;
+    } catch (e) {}
   }
 
   async createWebhook(project: string, status: string) {

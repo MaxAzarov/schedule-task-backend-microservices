@@ -1,5 +1,10 @@
 import { HttpService } from '@nestjs/axios';
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  forwardRef,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom, map } from 'rxjs';
 import { TrelloStrategy } from './strategy/trello-strategy';
@@ -26,7 +31,9 @@ export class TrelloService {
     @Inject(forwardRef(() => IntegrationsService))
     private readonly integrationsService: IntegrationsService,
     private readonly http: HttpService,
-  ) {}
+  ) {
+    // this.trelloStrategy.updateAccessToken();
+  }
 
   auth() {
     return this.trelloStrategy.getSignUrl();
@@ -44,15 +51,23 @@ export class TrelloService {
 
     const consumerKey = this.configService.get<string>('TRELLO_CLIENT_ID');
 
-    const response = await firstValueFrom<Board[]>(
-      this.http
-        .get(
-          `https://api.trello.com/1/members/me/boards?key=${consumerKey}&token=${token}`,
-        )
-        .pipe(map((x) => x.data)),
-    );
+    try {
+      const response = await firstValueFrom<Board[]>(
+        this.http
+          .get(
+            `https://api.trello.com/1/members/me/boards?key=${consumerKey}&token=${token}`,
+          )
+          .pipe(map((x) => x.data)),
+      );
 
-    return response;
+      return response;
+    } catch (e) {
+      if (e.response.status) {
+        throw new BadRequestException({
+          error: 'Please reconnect',
+        });
+      }
+    }
   }
 
   async me(token: string): Promise<User> {
@@ -160,5 +175,31 @@ export class TrelloService {
     );
 
     return response;
+  }
+
+  async markAsDoneCard(userId: string, cardId: string) {
+    const consumerKey = this.configService.get<string>('TRELLO_CLIENT_ID');
+
+    const integration = await this.integrationsService.findOne({
+      userId,
+      type: IntegrationType.trello,
+    });
+
+    if (!integration || !integration.readyColumnId) {
+      return null;
+    }
+
+    try {
+      const response = await firstValueFrom<Card>(
+        this.http
+          .put(
+            `https://api.trello.com/1/cards/${cardId}?idList=${integration.readyColumnId}&token=${integration.accessToken}&key=${consumerKey}`,
+            { headers: { 'Content-type': 'application/json' } },
+          )
+          .pipe(map((x) => x.data)),
+      );
+
+      return response;
+    } catch (e) {}
   }
 }

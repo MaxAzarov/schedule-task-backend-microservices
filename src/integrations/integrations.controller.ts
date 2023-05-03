@@ -17,6 +17,7 @@ import { IntegrationsService } from './integrations.service';
 import { JwtAuthGuard } from 'src/auth/guards';
 import { IntegrationType } from './types';
 import { UpdateIntegrationDto } from './dto/update-integration.dto';
+import { MarkEventAsDoneDto } from './dto/mark-event-as-done';
 
 @Controller('integrations')
 export class IntegrationsController {
@@ -38,6 +39,21 @@ export class IntegrationsController {
   @HttpCode(HttpStatus.OK)
   userEvents(@Request() request: IRequest) {
     return this.integrationsService.getUsersTasks((request as any).user.id);
+  }
+
+  @Put('/event/:eventId/done')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  markAsDone(
+    @Request() request: IRequest,
+    @Body() dto: MarkEventAsDoneDto,
+    @Param('eventId') eventId: string,
+  ) {
+    return this.integrationsService.markEventAsDone(
+      (request as any).user.id,
+      dto.type,
+      eventId,
+    );
   }
 
   @Get('/:type')

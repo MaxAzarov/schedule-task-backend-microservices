@@ -23,7 +23,7 @@ export interface Card {
   dateLastActivity: string;
   desc: string;
   descData: { emoji: unknown };
-  due: unknown;
+  due: string | null;
   dueReminder: unknown;
   email: unknown;
   idBoard: string;
@@ -40,7 +40,7 @@ export interface Card {
   pos: number;
   shortLink: string;
   shortUrl: string;
-  start: unknown;
+  start: string | null;
   subscribed: true;
   url: string;
   cover: {

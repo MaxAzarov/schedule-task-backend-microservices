@@ -25,7 +25,7 @@ export class TrelloController {
   async trelloAuth(@Res() res) {
     const redirectUrl = await this.trelloService.auth();
 
-    res.redirect(redirectUrl);
+    res.redirect(redirectUrl + '&scope=read,write');
   }
 
   @Get('auth/callback')
