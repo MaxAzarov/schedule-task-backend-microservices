@@ -31,9 +31,7 @@ export class TrelloService {
     @Inject(forwardRef(() => IntegrationsService))
     private readonly integrationsService: IntegrationsService,
     private readonly http: HttpService,
-  ) {
-    // this.trelloStrategy.updateAccessToken();
-  }
+  ) {}
 
   auth() {
     return this.trelloStrategy.getSignUrl();
@@ -63,9 +61,7 @@ export class TrelloService {
       return response;
     } catch (e) {
       if (e.response.status) {
-        throw new BadRequestException({
-          error: 'Please reconnect',
-        });
+        throw new BadRequestException({ error: 'Please reconnect' });
       }
     }
   }
@@ -107,6 +103,21 @@ export class TrelloService {
     return response;
   }
 
+  private checkIfWebhookExists(
+    webhooks: {
+      id: string;
+      description: string;
+      idModel: string;
+      callbackURL: string;
+      active: boolean;
+      consecutiveFailures: number;
+      firstConsecutiveFailDate: unknown;
+    }[],
+    id: string,
+  ): boolean {
+    return !webhooks.find((webhook) => webhook.idModel === id);
+  }
+
   /**
    * returns all cards in list
    */
@@ -121,11 +132,21 @@ export class TrelloService {
         .pipe(map((x) => x.data)),
     );
 
-    for (let i = 0; i < response.length; i++) {
+    const webhooks = await this.getWebhooks(token);
+
+    const idsToCreate = response.filter((item) =>
+      this.checkIfWebhookExists(webhooks, item.id),
+    );
+
+    if (idsToCreate.length === 0) {
+      return response;
+    }
+
+    for (let i = 0; i < idsToCreate.length; i++) {
       try {
         await this.createWebhook(response[i].id, token);
       } catch (e) {
-        // console.log('e: ', e);
+        console.log('e: ', e);
       }
     }
 
@@ -177,6 +198,32 @@ export class TrelloService {
             callbackURL: webhookCallback,
             idModel: entityId,
           }),
+          { headers: { 'Content-type': 'application/json' } },
+        )
+        .pipe(map((x) => x.data)),
+    );
+
+    return response;
+  }
+
+  async getWebhooks(token: string) {
+    const consumerKey = this.configService.get<string>('TRELLO_CLIENT_ID');
+
+    const response = await firstValueFrom<
+      {
+        id: string;
+        description: string;
+        idModel: string;
+        callbackURL: string;
+        active: boolean;
+        consecutiveFailures: number;
+        firstConsecutiveFailDate: unknown;
+      }[]
+    >(
+      this.http
+        .get(
+          `https://api.trello.com/1/tokens/${token}/webhooks/?key=${consumerKey}`,
+
           { headers: { 'Content-type': 'application/json' } },
         )
         .pipe(map((x) => x.data)),

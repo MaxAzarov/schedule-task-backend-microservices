@@ -12,6 +12,7 @@ import { IntegrationsService } from 'src/integrations/integrations.service';
 import { EventType } from 'src/integrations/types';
 import { plainToClass } from 'class-transformer';
 import { UpdateIntegrationDto } from 'src/integrations/dto/update-integration.dto';
+import { ProjectDetails } from './types/ProjectDetails';
 
 /**
  * flow:
@@ -50,6 +51,7 @@ export class JiraService {
       if (!integration) {
         return [];
       }
+
       const response = await firstValueFrom<Project[]>(
         this.http
           .get(
@@ -71,20 +73,20 @@ export class JiraService {
     }
   }
 
-  // async getProjectDetails(userId: string, key: string, token: string) {
-  //   const response = await firstValueFrom<ProjectDetails>(
-  //     this.http
-  //       .get(
-  //         `https://api.atlassian.com/ex/jira/${userId}/rest/api/3/project/${key}`,
-  //         {
-  //           headers: { Authorization: `Bearer ${token}` },
-  //         },
-  //       )
-  //       .pipe(map((x) => x.data)),
-  //   );
+  async getProjectDetails(userId: string, key: string, token: string) {
+    const response = await firstValueFrom<ProjectDetails>(
+      this.http
+        .get(
+          `https://api.atlassian.com/ex/jira/${userId}/rest/api/2/project/${key}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        )
+        .pipe(map((x) => x.data)),
+    );
 
-  //   return response;
-  // }
+    return response;
+  }
 
   async me(token: string) {
     const response = await firstValueFrom<UserInfo[]>(
@@ -143,7 +145,7 @@ export class JiraService {
     return response;
   }
 
-  async getProjectStatus(userId: string) {
+  async getProjectStatuses(userId: string) {
     try {
       await this.checkToken(userId);
       const integration = await this.integrationsService.findOne({
@@ -168,6 +170,32 @@ export class JiraService {
 
       /// first TASK, then subtask
       return response[0].statuses;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  private async getProjectStatus(
+    userId: string,
+    accessToken: string,
+    clientId: string,
+    statusId: string,
+  ) {
+    try {
+      await this.checkToken(userId);
+
+      const response = await firstValueFrom<ProjectStatus>(
+        this.http
+          .get(
+            `https://api.atlassian.com/ex/jira/${clientId}/rest/api/2/status/${statusId}`,
+            {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            },
+          )
+          .pipe(map((x) => x.data)),
+      );
+
+      return response;
     } catch (e) {}
   }
 
@@ -195,29 +223,57 @@ export class JiraService {
       if (!integration || !integration.projectId) {
         return [];
       }
+      const userDetails = await this.me(integration.accessToken);
 
-      // TODO:
-      // const jqlQuery = `assignee = currentUser() AND status = "${todoColumnId}" AND project = "${projectId}"`;
-      const jqlQuery = `assignee = currentUser() AND status = "To Do" AND project = "${integration.projectId}"`;
+      const { accessToken, clientId, todoColumnId, projectId } = integration;
+
+      const [status, projectDetails] = await Promise.all([
+        this.getProjectStatus(userId, accessToken, clientId, todoColumnId),
+        this.getProjectDetails(clientId, projectId, accessToken),
+      ]);
+
+      const jqlQuery = `assignee = currentUser() AND status = "${status.name}" AND project = "${projectId}"`;
 
       const response = await firstValueFrom<IssuesPaginated>(
         this.http
           .get(
-            `https://api.atlassian.com/ex/jira/${integration.clientId}/rest/api/3/search`,
+            `https://api.atlassian.com/ex/jira/${clientId}/rest/api/3/search`,
             {
-              headers: { Authorization: `Bearer ${integration.accessToken}` },
+              headers: { Authorization: `Bearer ${accessToken}` },
               params: { jql: jqlQuery },
             },
           )
           .pipe(map((x) => x.data)),
       );
+      const userUrl = userDetails[0].url;
 
-      this.createWebhook('FIRST', 'To Do');
+      const webhooks = await this.getWebhooks(integration.email, userUrl);
+
+      const exists = await this.checkIfWebhookExists(webhooks);
+
+      if (!exists) {
+        await this.createWebhook(
+          projectDetails.key,
+          status.name,
+          integration.email,
+          userUrl,
+        );
+      }
 
       return response.issues;
     } catch (e) {
       return [];
     }
+  }
+
+  private checkIfWebhookExists(webhooks: Webhook[]) {
+    const webhookCallback = this.configService.get<string>(
+      'JIRA_WEBHOOK_CALLBACK',
+    );
+
+    return webhooks.find(
+      (webhook) => webhook.url === webhookCallback && webhook.enabled,
+    );
   }
 
   public async checkToken(userId: string) {
@@ -229,19 +285,17 @@ export class JiraService {
     try {
       await this.me(integration.accessToken);
     } catch (e) {
-      try {
-        const result = await this.jiraStrategy.renewAccessToken(
-          integration.refreshToken,
-        );
+      const result = await this.jiraStrategy.renewAccessToken(
+        integration.refreshToken,
+      );
 
-        await this.integrationsService.update(
-          integration.id,
-          plainToClass(UpdateIntegrationDto, {
-            accessToken: result.access_token,
-            refreshToken: result.refresh_token,
-          }),
-        );
-      } catch (e) {}
+      await this.integrationsService.update(
+        integration.id,
+        plainToClass(UpdateIntegrationDto, {
+          accessToken: result.access_token,
+          refreshToken: result.refresh_token,
+        }),
+      );
     }
   }
 
@@ -288,22 +342,49 @@ export class JiraService {
     } catch (e) {}
   }
 
-  async createWebhook(project: string, status: string) {
+  async getWebhooks(email: string, userUrl: string) {
+    const jiraApiToken = this.configService.get<string>('JIRA_API_TOKEN');
+
+    try {
+      const response = await firstValueFrom<Webhook[]>(
+        this.http
+          .get(`${userUrl}/rest/webhooks/1.0/webhook`, {
+            headers: {
+              'Content-type': 'application/json',
+              Authorization: `Basic ${Buffer.from(
+                `${email}:${jiraApiToken}`,
+              ).toString('base64')}`,
+            },
+          })
+          .pipe(map((x) => x.data)),
+      );
+
+      return response;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async createWebhook(
+    project: string,
+    status: string,
+    email: string,
+    userUrl: string,
+  ) {
     const webhookCallback = this.configService.get<string>(
       'JIRA_WEBHOOK_CALLBACK',
     );
     const jiraApiToken = this.configService.get<string>('JIRA_API_TOKEN');
 
     const jqlQuery = `status = "${status}" AND project = "${project}"`;
-    const jiraEmail = 'volodor05412@gmail.com';
 
     try {
       const response = await firstValueFrom<Webhook>(
         this.http
           .post(
-            `https://maksym-azarov.atlassian.net/rest/webhooks/1.0/webhook`,
+            `${userUrl}/rest/webhooks/1.0/webhook`,
             JSON.stringify({
-              name: 'my first webhook via rest 1',
+              name: `Webhook ${status}`,
               url: webhookCallback,
               events: ['jira:issue_created', 'jira:issue_updated'],
               filters: {
@@ -315,7 +396,7 @@ export class JiraService {
               headers: {
                 'Content-type': 'application/json',
                 Authorization: `Basic ${Buffer.from(
-                  `${jiraEmail}:${jiraApiToken}`,
+                  `${email}:${jiraApiToken}`,
                 ).toString('base64')}`,
               },
             },
@@ -323,11 +404,6 @@ export class JiraService {
           .pipe(map((x) => x.data)),
       );
       return response;
-    } catch (e) {
-      console.log(
-        '🚀 ~ file: jira.service.ts:332 ~ JiraService ~ createWebhook ~ e:',
-        e.response.data,
-      );
-    }
+    } catch (e) {}
   }
 }

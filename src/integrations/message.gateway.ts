@@ -3,7 +3,6 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
   OnGatewayInit,
-  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
@@ -30,11 +29,6 @@ export class MessageGateway
   }
 
   emit(data) {
-    this.wss.emit('receiveMessage', data);
-  }
-
-  @SubscribeMessage('sendMessage')
-  async handleSendMessage(client: Socket, payload: string): Promise<void> {
-    this.wss.emit('receiveMessage', {});
+    this.wss.emit('refetchEvents', data);
   }
 }

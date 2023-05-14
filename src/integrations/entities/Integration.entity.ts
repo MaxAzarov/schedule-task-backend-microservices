@@ -42,21 +42,12 @@ export class Integration extends EntityHelper {
   @Column({ nullable: false })
   clientId: string;
 
-  /**
-   * board id or project id
-   */
   @Column({ nullable: true })
   projectId: string;
 
-  /**
-   * board id or project id
-   */
   @Column({ nullable: true })
   todoColumnId: string;
 
-  /**
-   * board id or project id
-   */
   @Column({ nullable: true })
   readyColumnId: string;
 

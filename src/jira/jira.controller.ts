@@ -53,18 +53,12 @@ export class JiraController {
   @UseGuards(JwtAuthGuard)
   async getAllProjectStatuses(@Request() request: IRequest) {
     const userId = (request as any).user.id;
-    return this.jiraService.getProjectStatus(userId);
+    return this.jiraService.getProjectStatuses(userId);
   }
-
-  // @Get('project/user/issues')
-  // async getAllUsersIssuesInStatus() {
-  //   this.jiraService.getAllUsersIssuesInStatus('', '', '', '');
-  // }
 
   @Post('webhook')
-  async createWebhook() {
-    this.jiraService.createWebhook('FIRST', 'In Progress');
-  }
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  async createWebhook() {}
 
   @Post('webhook/callback')
   @HttpCode(HttpStatus.OK)
