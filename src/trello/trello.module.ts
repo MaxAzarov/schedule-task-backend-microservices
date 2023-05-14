@@ -14,6 +14,7 @@ import { JiraService } from 'src/jira/jira.service';
 import { JiraStrategy } from 'src/jira/jira-strategy/jira-strategy';
 import { EventsModule } from 'src/events/events.module';
 import { EventsService } from 'src/events/events.service';
+import { MessageGateway } from 'src/integrations/message.gateway';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { EventsService } from 'src/events/events.service';
     JiraService,
     JiraStrategy,
     EventsService,
+    MessageGateway,
   ],
 })
 export class TrelloModule {}

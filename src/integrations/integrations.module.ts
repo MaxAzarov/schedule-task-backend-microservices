@@ -10,6 +10,7 @@ import { JiraService } from 'src/jira/jira.service';
 import { JiraStrategy } from 'src/jira/jira-strategy/jira-strategy';
 import { EventsService } from 'src/events/events.service';
 import { EventsModule } from 'src/events/events.module';
+import { MessageGateway } from './message.gateway';
 
 @Module({
   controllers: [IntegrationsController],
@@ -20,6 +21,7 @@ import { EventsModule } from 'src/events/events.module';
     JiraService,
     JiraStrategy,
     EventsService,
+    MessageGateway,
   ],
   imports: [
     HttpModule,

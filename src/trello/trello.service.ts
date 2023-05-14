@@ -121,6 +121,14 @@ export class TrelloService {
         .pipe(map((x) => x.data)),
     );
 
+    for (let i = 0; i < response.length; i++) {
+      try {
+        await this.createWebhook(response[i].id, token);
+      } catch (e) {
+        // console.log('e: ', e);
+      }
+    }
+
     return response;
   }
 

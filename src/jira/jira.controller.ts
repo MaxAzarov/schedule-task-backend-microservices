@@ -6,11 +6,15 @@ import { HttpCode, UseGuards } from '@nestjs/common/decorators';
 import { HttpStatus } from '@nestjs/common/enums';
 import { EventType } from 'src/integrations/types';
 import { JwtAuthGuard } from 'src/auth/guards';
+import { MessageGateway } from 'src/integrations/message.gateway';
 
 @ApiTags('jira')
 @Controller({ path: 'jira' })
 export class JiraController {
-  constructor(private readonly jiraService: JiraService) {}
+  constructor(
+    private readonly jiraService: JiraService,
+    private readonly messageGateway: MessageGateway,
+  ) {}
 
   @Get('auth')
   async login(@Res() res) {
@@ -66,6 +70,7 @@ export class JiraController {
   @HttpCode(HttpStatus.OK)
   async handleWebhookpost(@Req() req, @Res() res) {
     // const callbackData = req.body;
+    this.messageGateway.emit({});
 
     res.json({ ok: 'ok' });
   }

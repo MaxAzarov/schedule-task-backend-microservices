@@ -12,14 +12,17 @@ import {
 import { Request as IRequest } from 'express';
 import { ApiTags } from '@nestjs/swagger/dist';
 import { TrelloService } from './trello.service';
-import { WebhookCallback } from './types/WebhookCallback';
 import { EventType } from 'src/integrations/types';
 import { JwtAuthGuard } from 'src/auth/guards';
+import { MessageGateway } from 'src/integrations/message.gateway';
 
 @ApiTags('trello')
 @Controller({ path: 'trello', version: '1' })
 export class TrelloController {
-  constructor(private readonly trelloService: TrelloService) {}
+  constructor(
+    private readonly trelloService: TrelloService,
+    private readonly messageGateway: MessageGateway,
+  ) {}
 
   @Get('auth')
   async trelloAuth(@Res() res) {
@@ -56,12 +59,6 @@ export class TrelloController {
     return this.trelloService.getBoardList(userId);
   }
 
-  @Get('list/cards')
-  @UseGuards(JwtAuthGuard)
-  async listCards() {
-    this.trelloService.createWebhook('', '');
-  }
-
   @Get('user/cards')
   @UseGuards(JwtAuthGuard)
   async userCards(@Request() request: IRequest) {
@@ -69,15 +66,16 @@ export class TrelloController {
     return this.trelloService.getUserCards(userId);
   }
 
-  @Post('webhook')
-  async createWebhook() {
-    this.trelloService.createWebhook('', '');
+  @Get('webhook/callback')
+  @HttpCode(HttpStatus.OK)
+  async handleWebhook(@Req() req, @Res() res) {
+    res.json({ ok: 'ok' });
   }
 
   @Post('webhook/callback')
   @HttpCode(HttpStatus.OK)
   async handleWebhookpost(@Req() req, @Res() res) {
-    const callbackData = req.body as WebhookCallback;
+    this.messageGateway.emit({});
 
     res.json({ ok: 'ok' });
   }

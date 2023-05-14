@@ -212,6 +212,8 @@ export class JiraService {
           .pipe(map((x) => x.data)),
       );
 
+      this.createWebhook('FIRST', 'To Do');
+
       return response.issues;
     } catch (e) {
       return [];
@@ -295,31 +297,37 @@ export class JiraService {
     const jqlQuery = `status = "${status}" AND project = "${project}"`;
     const jiraEmail = 'volodor05412@gmail.com';
 
-    const response = await firstValueFrom<Webhook>(
-      this.http
-        .post(
-          `https://maksym-azarov.atlassian.net/rest/webhooks/1.0/webhook`,
-          JSON.stringify({
-            name: 'my first webhook via rest 1',
-            url: webhookCallback,
-            events: ['jira:issue_created', 'jira:issue_updated'],
-            filters: {
-              'issue-related-events-section': jqlQuery,
+    try {
+      const response = await firstValueFrom<Webhook>(
+        this.http
+          .post(
+            `https://maksym-azarov.atlassian.net/rest/webhooks/1.0/webhook`,
+            JSON.stringify({
+              name: 'my first webhook via rest 1',
+              url: webhookCallback,
+              events: ['jira:issue_created', 'jira:issue_updated'],
+              filters: {
+                'issue-related-events-section': jqlQuery,
+              },
+              excludeBody: false,
+            }),
+            {
+              headers: {
+                'Content-type': 'application/json',
+                Authorization: `Basic ${Buffer.from(
+                  `${jiraEmail}:${jiraApiToken}`,
+                ).toString('base64')}`,
+              },
             },
-            excludeBody: false,
-          }),
-          {
-            headers: {
-              'Content-type': 'application/json',
-              Authorization: `Basic ${Buffer.from(
-                `${jiraEmail}:${jiraApiToken}`,
-              ).toString('base64')}`,
-            },
-          },
-        )
-        .pipe(map((x) => x.data)),
-    );
-
-    return response;
+          )
+          .pipe(map((x) => x.data)),
+      );
+      return response;
+    } catch (e) {
+      console.log(
+        '🚀 ~ file: jira.service.ts:332 ~ JiraService ~ createWebhook ~ e:',
+        e.response.data,
+      );
+    }
   }
 }
