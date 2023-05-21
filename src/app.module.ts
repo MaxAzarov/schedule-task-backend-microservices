@@ -13,12 +13,8 @@ import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-    TypeOrmModule.forRootAsync({
-      useClass: TypeOrmConfigService,
-    }),
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRootAsync({ useClass: TypeOrmConfigService }),
     TrelloModule,
     JiraModule,
     AuthModule,
