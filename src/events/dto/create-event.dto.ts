@@ -10,10 +10,10 @@ export class CreateEventDto {
 
   @IsDate()
   @IsOptional()
-  end: Date;
+  end?: Date;
 
   @IsOptional()
-  resource: unknown;
+  resource?: unknown;
 
   @IsNotEmpty()
   @IsString()

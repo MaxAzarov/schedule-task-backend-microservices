@@ -93,16 +93,20 @@
     "node": "16.17.1"
   },
   "jest": {
+    "preset": "ts-jest",
     "moduleFileExtensions": [
       "js",
       "json",
       "ts"
     ],
-    "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "moduleDirectories": [
+      "node_modules",
+      "<rootDir>"
+    ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
