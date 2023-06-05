@@ -115,7 +115,14 @@ export class TrelloService {
     }[],
     id: string,
   ): boolean {
-    return !webhooks.find((webhook) => webhook.idModel === id);
+    const webhookCallback = this.configService.get<string>(
+      'TRELLO_WEBHOOK_CALLBACK',
+    );
+
+    return !webhooks.find(
+      (webhook) =>
+        webhook.idModel === id && webhook.callbackURL === webhookCallback,
+    );
   }
 
   /**
@@ -142,13 +149,9 @@ export class TrelloService {
       return response;
     }
 
-    for (let i = 0; i < idsToCreate.length; i++) {
-      try {
-        await this.createWebhook(response[i].id, token);
-      } catch (e) {
-        console.log('e: ', e);
-      }
-    }
+    await Promise.allSettled(
+      idsToCreate.map((item) => this.createWebhook(item.id, token)),
+    );
 
     return response;
   }

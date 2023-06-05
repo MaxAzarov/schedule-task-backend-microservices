@@ -13,9 +13,9 @@ export interface Card {
     comments: number;
     attachments: number;
     description: false;
-    due: unknown;
+    due: string;
     dueComplete: false;
-    start: unknown;
+    start: string;
   };
   checkItemStates: unknown;
   closed: false;

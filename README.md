@@ -34,7 +34,14 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
-1. Clone repository
-2. npm install
-3. Copy env-example and create .env file
-4. npm run start
+1. Use 16.17.1 version of node.js
+2. Clone repository
+3. npm install
+4. Copy env-example and create .env file. Fill in this env file
+5. Run the migrations: npm run migrations:run
+6. Install free version of ngrok
+7. Run command: ngrok http 5000
+8. Change env variables:
+   TRELLO_WEBHOOK_CALLBACK=ngrok_url/trello/webhook/callback
+   JIRA_WEBHOOK_CALLBACK=ngrok_url/jira/webhook/callback
+9. npm run start:dev
