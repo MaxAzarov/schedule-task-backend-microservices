@@ -34,7 +34,7 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
-1. Use 16.17.1 version of node.js
+1. Use 18.19.0 version of node.js
 2. Clone repository
 3. npm install
 4. Copy env-example and create .env file. Fill in this env file
