@@ -1,6 +1,5 @@
 import { HttpModule } from '@nestjs/axios';
 import { Module, forwardRef } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AUTH_SERVICE, USERS_SERVICE } from '@app/common';
 import { TrelloStrategy } from './strategy/trello-strategy';
@@ -17,7 +16,6 @@ import { MessageGateway } from '../integrations/message.gateway';
 @Module({
   imports: [
     HttpModule,
-    JwtModule,
     forwardRef(() => IntegrationsModule),
     EventsModule,
     ClientsModule.register([
