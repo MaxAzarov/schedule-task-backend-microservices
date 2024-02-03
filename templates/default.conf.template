@@ -1,0 +1,40 @@
+upstream auth {
+    server auth:${AUTH_HTTP_PORT};
+}
+
+upstream jira {
+    server jira:${JIRA_HTTP_PORT};
+}
+
+upstream trello {
+    server trello:${TRELLO_HTTP_PORT};
+}
+
+upstream users {
+    server users:${USERS_HTTP_PORT};
+}
+
+
+server {
+    listen ${NGINX_PORT};
+
+    location /auth {
+        proxy_set_header Host $host;
+        proxy_pass http://auth;
+    }
+
+    location /jira {
+        proxy_set_header Host $host;
+        proxy_pass http://jira;
+    }
+
+    location /trello {
+        proxy_set_header Host $host;
+        proxy_pass http://trello;
+    }
+
+    location /users {
+        proxy_set_header Host $host;
+        proxy_pass http://users;
+    }
+}

@@ -92,5 +92,20 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
 
+  nginx:
+    restart: always
+    image: nginx:latest
+    container_name: nginx
+    environment:
+      - AUTH_HTTP_PORT=${AUTH_HTTP_PORT}
+      - JIRA_HTTP_PORT=${JIRA_HTTP_PORT}
+      - TRELLO_HTTP_PORT=${TRELLO_HTTP_PORT}
+      - USERS_HTTP_PORT=${USERS_HTTP_PORT}
+      - NGINX_PORT=${NGINX_PORT}
+    volumes:
+      - ./templates:/etc/nginx/templates
+    ports:
+      - ${NGINX_PORT}:${NGINX_PORT}
+
 volumes:
   db_data:
