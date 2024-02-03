@@ -15,7 +15,6 @@ import { Request as IRequest } from 'express';
 import { EventType, JwtAuthGuard } from '@app/common';
 import { CreateIntegrationDto } from './dto/create-integration.dto';
 import { IntegrationsService } from './integrations.service';
-
 import { UpdateIntegrationDto } from './dto/update-integration.dto';
 import { MarkEventAsDoneDto } from './dto/mark-event-as-done';
 
@@ -78,5 +77,37 @@ export class IntegrationsController {
   @HttpCode(HttpStatus.OK)
   update(@Param('id') id: number, @Body() dto: UpdateIntegrationDto) {
     return this.integrationsService.update(id, dto);
+  }
+
+  @Get('/trello/boards')
+  getTrelloBoards(@Request() request: IRequest) {
+    return this.integrationsService.getTrelloBoards((request as any).user.id);
+  }
+
+  @Get('/trello/user/cards')
+  getUserCards(@Request() request: IRequest) {
+    return this.integrationsService.getTrelloUserCards(
+      (request as any).user.id,
+    );
+  }
+
+  @Get('/trello/board/list')
+  getTrelloBoardList(@Request() request: IRequest) {
+    return this.integrationsService.getTrelloBoardList(
+      (request as any).user.id,
+    );
+  }
+
+  // jira
+  @Get('/jira/board/list')
+  getJiraBoardList(@Request() request: IRequest) {
+    return this.integrationsService.getJiraBoards((request as any).user.id);
+  }
+
+  @Get('/jira/project/statuses')
+  getJiraProjectStatuses(@Request() request: IRequest) {
+    return this.integrationsService.getJiraProjectStatuses(
+      (request as any).user.id,
+    );
   }
 }

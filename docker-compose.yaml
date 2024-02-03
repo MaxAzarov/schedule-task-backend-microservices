@@ -1,13 +1,81 @@
 version: '3.8'
 services:
-  api:
+  auth:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./apps/auth/Dockerfile
+      target: development
+    command: npm run start:dev auth
+    env_file:
+      - .env
+    ports:
+      - ${AUTH_TCP_PORT}:${AUTH_TCP_PORT}
+      - ${AUTH_HTTP_PORT}:${AUTH_HTTP_PORT}
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - db
+
+  jira:
+    build:
+      context: .
+      dockerfile: ./apps/jira/Dockerfile
+      target: development
+    command: npm run start:dev jira
+    env_file:
+      - .env
+    ports:
+      - ${JIRA_HTTP_PORT}:${JIRA_HTTP_PORT}
+      - ${JIRA_TCP_PORT}:${JIRA_TCP_PORT}
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - db
+
+  trello:
+    build:
+      context: .
+      dockerfile: ./apps/trello/Dockerfile
+      target: development
+    command: npm run start:dev trello
+    env_file:
+      - .env
+    ports:
+      - ${TRELLO_HTTP_PORT}:${TRELLO_HTTP_PORT}
+      - ${TRELLO_TCP_PORT}:${TRELLO_TCP_PORT}
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - db
+
+  users:
+    build:
+      context: .
+      dockerfile: ./apps/users/Dockerfile
+      target: development
+    command: npm run start:dev users
+    env_file:
+      - .env
+    ports:
+      - ${USERS_HTTP_PORT}:${USERS_HTTP_PORT}
+      - ${USERS_TCP_PORT}:${USERS_TCP_PORT}
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - db
+
+  schedule-task:
+    build:
+      context: .
+      dockerfile: ./apps/schedule-task/Dockerfile
+      target: development
+    command: npm run start:dev schedule-task
+    env_file:
+      - .env
     ports:
       - ${PORT}:${PORT}
-    extra_hosts:
-      - 'host.docker.internal:host-gateway'
+    volumes:
+      - .:/usr/src/app
     depends_on:
       - db
 
@@ -18,9 +86,9 @@ services:
     container_name: schedule-task-db
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=starwars
-      - POSTGRES_DB=scheduleTask
+      - POSTGRES_USER=${DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=${DATABASE_NAME}
     volumes:
       - db_data:/var/lib/postgresql/data
 

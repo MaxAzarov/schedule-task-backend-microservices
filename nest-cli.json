@@ -45,6 +45,24 @@
       "compilerOptions": {
         "tsConfigPath": "apps/users/tsconfig.app.json"
       }
+    },
+    "trello": {
+      "type": "application",
+      "root": "apps/trello",
+      "entryFile": "main",
+      "sourceRoot": "apps/trello/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/trello/tsconfig.app.json"
+      }
+    },
+    "jira": {
+      "type": "application",
+      "root": "apps/jira",
+      "entryFile": "main",
+      "sourceRoot": "apps/jira/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/jira/tsconfig.app.json"
+      }
     }
   }
 }

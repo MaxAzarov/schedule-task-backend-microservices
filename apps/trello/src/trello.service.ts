@@ -1,19 +1,13 @@
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  forwardRef,
-} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom, map } from 'rxjs';
-import { EventType } from '@app/common';
+import { User } from '@app/common';
 import { TrelloStrategy } from './strategy/trello-strategy';
-import { Board } from './types/Board';
-import { BoardList } from './types/BoardList';
-import { Card } from './types/Card';
-import { User } from './types/User';
-import { IntegrationsService } from '../integrations/integrations.service';
+import { Board, BoardList, Card, Webhook } from './types';
+import { GetBoardListDto } from './dto/get-board-list.dto';
+import { GetUserCardsDto } from './dto/get-user-cards.dto';
+import { MarkCardAsDoneDto } from './dto/mark-card-as-done.dto';
 
 /**
  * flow:
@@ -26,12 +20,11 @@ import { IntegrationsService } from '../integrations/integrations.service';
 @Injectable()
 export class TrelloService {
   private readonly TRELLO_BASE_URL: string = 'https://api.trello.com/1';
+  private readonly logger = new Logger(TrelloService.name);
 
   constructor(
     private readonly trelloStrategy: TrelloStrategy,
     private readonly configService: ConfigService,
-    @Inject(forwardRef(() => IntegrationsService))
-    private readonly integrationsService: IntegrationsService,
     private readonly http: HttpService,
   ) {}
 
@@ -43,80 +36,50 @@ export class TrelloService {
     return await this.trelloStrategy.getUserTokens(url);
   }
 
-  async getBoards(userId: string): Promise<Board[]> {
-    const token = await this.integrationsService.getUserAccessToken(
-      userId,
-      EventType.Trello,
-    );
-
+  async getBoards(accessToken: string): Promise<Board[]> {
     const consumerKey = this.configService.get<string>('TRELLO_CLIENT_ID');
 
     try {
-      const response = await firstValueFrom<Board[]>(
+      return await firstValueFrom<Board[]>(
         this.http
           .get(
-            `${this.TRELLO_BASE_URL}/members/me/boards?key=${consumerKey}&token=${token}`,
+            `${this.TRELLO_BASE_URL}/members/me/boards?key=${consumerKey}&token=${accessToken}`,
           )
           .pipe(map((x) => x.data)),
       );
-
-      return response;
     } catch (e) {
+      this.logger.error('Can not get boards: ', e);
       if (e.response.status) {
         throw new BadRequestException({ error: 'Please reconnect' });
       }
     }
   }
 
-  async me(token: string): Promise<User> {
+  async me(accessToken: string): Promise<User> {
     const consumerKey = this.configService.get<string>('TRELLO_CLIENT_ID');
 
-    const response = await firstValueFrom<User>(
+    return await firstValueFrom<User>(
       this.http
         .get(
-          `${this.TRELLO_BASE_URL}/members/me?fields=all&token=${token}&key=${consumerKey}`,
+          `${this.TRELLO_BASE_URL}/members/me?fields=all&token=${accessToken}&key=${consumerKey}`,
         )
         .pipe(map((x) => x.data)),
     );
-
-    return response;
   }
 
-  async getBoardList(userId: string): Promise<BoardList[]> {
-    const integration = await this.integrationsService.findOne({
-      userId,
-      type: EventType.Trello,
-    });
-
-    if (!integration || !integration.projectId) {
-      return [];
-    }
-
+  async getBoardList(data: GetBoardListDto): Promise<BoardList[]> {
     const consumerKey = this.configService.get<string>('TRELLO_CLIENT_ID');
 
-    const response = await firstValueFrom<BoardList[]>(
+    return await firstValueFrom<BoardList[]>(
       this.http
         .get(
-          `${this.TRELLO_BASE_URL}/boards/${integration.projectId}/lists?token=${integration.accessToken}&key=${consumerKey}`,
+          `${this.TRELLO_BASE_URL}/boards/${data.projectId}/lists?token=${data.accessToken}&key=${consumerKey}`,
         )
         .pipe(map((x) => x.data)),
     );
-
-    return response;
   }
 
-  private checkIfWebhookExists(
-    webhooks: {
-      id: string;
-      description: string;
-      idModel: string;
-      callbackURL: string;
-      active: boolean;
-      consecutiveFailures: number;
-      firstConsecutiveFailDate: unknown;
-    }[],
-    id: string,
-  ): boolean {
+  private checkIfWebhookExists(webhooks: Webhook[], id: string): boolean {
     const webhookCallback = this.configService.get<string>(
       'TRELLO_WEBHOOK_CALLBACK',
     );
@@ -158,24 +121,18 @@ export class TrelloService {
     return response;
   }
 
-  async getUserCards(userId: string): Promise<Card[]> {
+  async getUserCards({
+    todoColumnId,
+    accessToken,
+    clientId,
+  }: GetUserCardsDto): Promise<Card[]> {
     try {
-      const integration = await this.integrationsService.findOne({
-        userId,
-        type: EventType.Trello,
-      });
-
-      if (!integration || !integration.todoColumnId || !integration.clientId) {
-        return [];
-      }
-
-      const cards = await this.getListCards(
-        integration.todoColumnId,
-        integration.accessToken,
+      return await this.getListCards(todoColumnId, accessToken).then((cards) =>
+        cards.filter((c) => c.idMembers.includes(clientId)),
       );
-
-      return cards.filter((c) => c.idMembers.includes(integration.clientId));
     } catch (e) {
+      this.logger.error('Can not user cards: ', e);
+
       return [];
     }
   }
@@ -186,15 +143,7 @@ export class TrelloService {
       'TRELLO_WEBHOOK_CALLBACK',
     );
 
-    const response = await firstValueFrom<{
-      id: string;
-      description: string;
-      idModel: string;
-      callbackURL: string;
-      active: boolean;
-      consecutiveFailures: number;
-      firstConsecutiveFailDate: unknown;
-    }>(
+    return await firstValueFrom<Webhook>(
       this.http
         .post(
           `${this.TRELLO_BASE_URL}/tokens/${token}/webhooks/?key=${consumerKey}`,
@@ -207,24 +156,12 @@ export class TrelloService {
         )
         .pipe(map((x) => x.data)),
     );
-
-    return response;
   }
 
   async getWebhooks(token: string) {
     const consumerKey = this.configService.get<string>('TRELLO_CLIENT_ID');
 
-    const response = await firstValueFrom<
-      {
-        id: string;
-        description: string;
-        idModel: string;
-        callbackURL: string;
-        active: boolean;
-        consecutiveFailures: number;
-        firstConsecutiveFailDate: unknown;
-      }[]
-    >(
+    return await firstValueFrom<Webhook[]>(
       this.http
         .get(
           `${this.TRELLO_BASE_URL}/tokens/${token}/webhooks/?key=${consumerKey}`,
@@ -233,33 +170,26 @@ export class TrelloService {
         )
         .pipe(map((x) => x.data)),
     );
-
-    return response;
   }
 
-  async markAsDoneCard(userId: string, cardId: string) {
+  async markAsDoneCard({
+    readyColumnId,
+    accessToken,
+    cardId,
+  }: MarkCardAsDoneDto) {
     const consumerKey = this.configService.get<string>('TRELLO_CLIENT_ID');
 
-    const integration = await this.integrationsService.findOne({
-      userId,
-      type: EventType.Trello,
-    });
-
-    if (!integration || !integration.readyColumnId) {
-      return null;
-    }
-
     try {
-      const response = await firstValueFrom<Card>(
+      return await firstValueFrom<Card>(
         this.http
           .put(
-            `${this.TRELLO_BASE_URL}/cards/${cardId}?idList=${integration.readyColumnId}&token=${integration.accessToken}&key=${consumerKey}`,
+            `${this.TRELLO_BASE_URL}/cards/${cardId}?idList=${readyColumnId}&token=${accessToken}&key=${consumerKey}`,
             { headers: { 'Content-type': 'application/json' } },
           )
           .pipe(map((x) => x.data)),
       );
-
-      return response;
-    } catch (e) {}
+    } catch (e) {
+      this.logger.error('Can not mark card as done: ', e);
+    }
   }
 }

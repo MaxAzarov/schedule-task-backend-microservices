@@ -1,2 +1,4 @@
 export const AUTH_SERVICE = 'AUTH_SERVICE';
 export const USERS_SERVICE = 'USERS_SERVICE';
+export const TRELLO_SERVICE = 'TRELLO_SERVICE';
+export const JIRA_SERVICE = 'JIRA_SERVICE';
