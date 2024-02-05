@@ -64,7 +64,7 @@ services:
     depends_on:
       - db
 
-  schedule-task:
+  schedule:
     build:
       context: .
       dockerfile: ./apps/schedule-task/Dockerfile

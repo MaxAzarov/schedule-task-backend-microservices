@@ -2,7 +2,7 @@ import { IsString } from 'class-validator';
 
 export class MarkCardAsDoneDto {
   @IsString()
-  userId: string;
+  userId: number;
 
   @IsString()
   cardId: string;

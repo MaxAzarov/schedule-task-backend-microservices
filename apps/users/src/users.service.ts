@@ -15,6 +15,12 @@ export class UsersService {
     return userRepository.findOne({ where: fields });
   }
 
+  findAll() {
+    const userRepository = this.entityManger.getRepository(User);
+
+    return userRepository.find({});
+  }
+
   create(createProfileDto: CreateUserDto) {
     const usersRepository = this.entityManger.getRepository(User);
 

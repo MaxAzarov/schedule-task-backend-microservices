@@ -21,7 +21,7 @@ export class Event extends EntityHelper {
   user: User;
 
   @Column()
-  userId: string;
+  userId: number;
 
   @Column()
   title?: string;

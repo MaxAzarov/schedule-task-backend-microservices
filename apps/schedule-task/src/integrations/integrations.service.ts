@@ -11,22 +11,13 @@ import { ClientProxy } from '@nestjs/microservices';
 import { EventType, JIRA_SERVICE, TRELLO_SERVICE } from '@app/common';
 import { CreateIntegrationDto } from './dto/create-integration.dto';
 import { Integration } from './entities/Integration.entity';
-// import { TrelloService } from '../trello/trello.service';
-// import { JiraService } from '../jira/jira.service';
 import { EventsService } from '../events/events.service';
 import { UpdateIntegrationDto } from './dto/update-integration.dto';
-// import { normalizeTrelloEvents } from '../trello/helpers/normalizeEvents';
-// import { normalizeJiraEvents } from '../jira/helpers/normalizeEvents';
-// import { normalizeCustomEvents } from '../events/helpers/normalizeEvents';
-
+import { normalizeCustomEvents } from '../events/helpers/normalizeEvents';
 @Injectable()
 export class IntegrationsService {
   constructor(
     private readonly entityManger: EntityManager,
-    // @Inject(forwardRef(() => TrelloService))
-    // private readonly trelloService: TrelloService,
-    // private readonly jiraService: JiraService,
-
     @Inject(TRELLO_SERVICE) private readonly trelloClient: ClientProxy,
     @Inject(JIRA_SERVICE) private readonly jiraClient: ClientProxy,
     private readonly eventsService: EventsService,
@@ -111,7 +102,7 @@ export class IntegrationsService {
     }
   }
 
-  public async getUserAccessToken(userId: string, type: EventType) {
+  public async getUserAccessToken(userId: number, type: EventType) {
     const integration = await this.findOne(
       { userId, type },
       { accessToken: true },
@@ -124,7 +115,7 @@ export class IntegrationsService {
     return integration.accessToken;
   }
 
-  public async getUserTodoColumnId(userId: string, type: EventType) {
+  public async getUserTodoColumnId(userId: number, type: EventType) {
     const integration = await this.findOne(
       { userId, type },
       { todoColumnId: true },
@@ -137,7 +128,7 @@ export class IntegrationsService {
     return integration.todoColumnId;
   }
 
-  public async getClientId(userId: string, type: EventType) {
+  public async getClientId(userId: number, type: EventType) {
     const integration = await this.findOne(
       { userId, type },
       { clientId: true },
@@ -150,7 +141,7 @@ export class IntegrationsService {
     return integration.clientId;
   }
 
-  public async getUserBoardId(userId: string, type: EventType) {
+  public async getUserBoardId(userId: number, type: EventType) {
     const integration = await this.findOne(
       { userId, type },
       { projectId: true },
@@ -163,37 +154,45 @@ export class IntegrationsService {
     return integration.projectId;
   }
 
-  public async getUsersTasks(userId: string) {
+  public async getUsersTasks(userId: number) {
     const [trelloIntegration, jiraIntegration] = await Promise.all([
       this.findOne({ userId, type: EventType.Trello }),
       this.findOne({ userId, type: EventType.Jira }),
     ]);
 
-    const [customEvents, trelloEvents, jiraEvents] = await Promise.all([
-      this.eventsService.findMany({ userId }),
-      firstValueFrom(
-        this.trelloClient.send('user_cards', {
-          todoColumnId: trelloIntegration.todoColumnId,
-          accessToken: trelloIntegration.accessToken,
-          clientId: trelloIntegration.clientId,
-        }),
-      ),
-      firstValueFrom(
-        this.jiraClient.send('user_cards', {
-          accessToken: jiraIntegration.accessToken,
-          clientId: jiraIntegration.clientId,
-          todoColumnId: jiraIntegration.todoColumnId,
-          projectId: jiraIntegration.projectId,
-          email: jiraIntegration.email,
-        }),
-      ),
-    ]);
+    const customEvents = await this.eventsService.findMany({ userId });
 
-    return customEvents.concat(trelloEvents).concat(jiraEvents);
+    let trelloEvents = [];
+    if (trelloIntegration) {
+      const cards = await this.trelloClient.send('user_cards', {
+        todoColumnId: trelloIntegration.todoColumnId,
+        accessToken: trelloIntegration.accessToken,
+        clientId: trelloIntegration.clientId,
+      });
+
+      trelloEvents = await firstValueFrom(cards);
+    }
+
+    let jiraEvents = [];
+    if (trelloIntegration) {
+      const cards = await this.jiraClient.send('user_cards', {
+        accessToken: jiraIntegration.accessToken,
+        clientId: jiraIntegration.clientId,
+        todoColumnId: jiraIntegration.todoColumnId,
+        projectId: jiraIntegration.projectId,
+        email: jiraIntegration.email,
+      });
+
+      jiraEvents = await firstValueFrom(cards);
+    }
+
+    return normalizeCustomEvents(customEvents)
+      .concat(trelloEvents)
+      .concat(jiraEvents);
   }
 
   public async markEventAsDone(
-    userId: string,
+    userId: number,
     type: EventType,
     cardId: string,
   ) {
@@ -218,13 +217,13 @@ export class IntegrationsService {
   }
 
   // trello methods
-  async getTrelloBoards(userId: string) {
+  async getTrelloBoards(userId: number) {
     const accessToken = await this.getUserAccessToken(userId, EventType.Trello);
 
     return firstValueFrom(this.trelloClient.send('boards', accessToken));
   }
 
-  async getTrelloUserCards(userId: string) {
+  async getTrelloUserCards(userId: number) {
     const integration = await this.findOne({
       userId,
       type: EventType.Trello,
@@ -243,7 +242,7 @@ export class IntegrationsService {
     );
   }
 
-  async getTrelloBoardList(userId: string) {
+  async getTrelloBoardList(userId: number) {
     const integration = await this.findOne({
       userId,
       type: EventType.Trello,
@@ -262,7 +261,7 @@ export class IntegrationsService {
   }
 
   // jira methods
-  async getJiraBoards(userId: string) {
+  async getJiraBoards(userId: number) {
     const integration = await this.findOne({ userId, type: EventType.Jira });
 
     if (!integration) {
@@ -277,7 +276,7 @@ export class IntegrationsService {
     );
   }
 
-  async getJiraProjectStatuses(userId: string) {
+  async getJiraProjectStatuses(userId: number) {
     const integration = await this.findOne({ userId, type: EventType.Jira });
 
     if (!integration || !integration.projectId) {

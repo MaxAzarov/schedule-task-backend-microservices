@@ -9,6 +9,7 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { ClientProxy } from '@nestjs/microservices';
 import { USERS_SERVICE, User } from '@app/common';
+import { SignupDto } from './dto/auth-signup.dto';
 
 @Injectable()
 export class AuthService {
@@ -17,10 +18,16 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async me(user: User) {
-    return await firstValueFrom(
-      this.usersClient.emit('find_user', { id: user.id }),
-    );
+  async me(userDto: User) {
+    const user = await this.usersClient.send('find_user', { id: userDto.id });
+
+    if (!user) {
+      throw new BadRequestException({
+        error: 'User does not exist',
+      });
+    }
+
+    return await firstValueFrom(user);
   }
 
   async getUserFromToken(token: string) {
@@ -28,9 +35,9 @@ export class AuthService {
   }
 
   async signIn(email: string, password: string): Promise<any> {
-    const user = await firstValueFrom(
-      this.usersClient.emit('find_user', { email }),
-    );
+    const data = await this.usersClient.send('find_user', { email });
+
+    const user = await firstValueFrom(data);
 
     if (!user) {
       throw new BadRequestException({
@@ -50,5 +57,19 @@ export class AuthService {
         error: 'Invalid user data',
       });
     }
+  }
+
+  async signUp(loginDto: SignupDto) {
+    const user = await firstValueFrom(
+      this.usersClient.emit('find_user', { email: loginDto.email }),
+    );
+
+    if (user) {
+      throw new BadRequestException({
+        error: 'User exists',
+      });
+    }
+
+    return await firstValueFrom(this.usersClient.emit('create_user', loginDto));
   }
 }

@@ -2,8 +2,8 @@ upstream auth {
     server auth:${AUTH_HTTP_PORT};
 }
 
-upstream schedule-task {
-    server schedule-task:${PORT};
+upstream schedule {
+    server schedule:${PORT};
 }
 
 upstream jira {
@@ -21,22 +21,49 @@ upstream users {
 server {
     listen ${NGINX_PORT};
 
-    location / {
-        proxy_set_header Host $host;
-        proxy_pass http://schedule-task;
+    location /integrations/ {
+        # Match any request that starts with /integrations/ followed by an ID
+        # The ID will be captured and available as $1 in the proxy_pass directive
+        rewrite ^/events/(.*)$ /$1 break;
 
-        # CORS headers for /
+        proxy_set_header Host $host;
+        proxy_pass http://schedule;
+
+        # CORS headers for /schedule
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Credentials' 'true';
             add_header 'Access-Control-Allow-Origin' '*' always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
+            add_header 'Access-Control-Allow-Headers' '*';
+            add_header 'Content-Type' 'text/plain charset=UTF-8';
+            return 200;
+        }
+
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' '*';
+        add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
+    }
+
+    location /events/ {
+        # Match any request that starts with /events/ followed by an ID
+        # The ID will be captured and available as $1 in the proxy_pass directive
+        rewrite ^/events/(.*)$ /$1 break;
+
+        proxy_set_header Host $host;
+        proxy_pass http://schedule;
+
+        # CORS headers for /schedule
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Credentials' 'true';
+            add_header 'Access-Control-Allow-Origin' '*' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
             add_header 'Access-Control-Allow-Headers' '*';
             add_header 'Content-Type' 'text/plain charset=UTF-8';
             return 200;
         }
 
         add_header 'Access-Control-Allow-Origin' '*' always;
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
         add_header 'Access-Control-Allow-Headers' '*';
         add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
     }
@@ -45,18 +72,17 @@ server {
         proxy_set_header Host $host;
         proxy_pass http://auth;
 
-        # CORS headers for /auth
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Credentials' 'true';
             add_header 'Access-Control-Allow-Origin' '*' always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
             add_header 'Access-Control-Allow-Headers' '*';
             add_header 'Content-Type' 'text/plain charset=UTF-8';
             return 200;
         }
 
         add_header 'Access-Control-Allow-Origin' '*' always;
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
         add_header 'Access-Control-Allow-Headers' '*';
         add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
     }
@@ -65,18 +91,17 @@ server {
         proxy_set_header Host $host;
         proxy_pass http://jira;
 
-        # CORS headers for /jira
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Credentials' 'true';
             add_header 'Access-Control-Allow-Origin' '*' always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
             add_header 'Access-Control-Allow-Headers' '*';
             add_header 'Content-Type' 'text/plain charset=UTF-8';
             return 200;
         }
 
         add_header 'Access-Control-Allow-Origin' '*' always;
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
         add_header 'Access-Control-Allow-Headers' '*';
         add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
     }
@@ -85,18 +110,17 @@ server {
         proxy_set_header Host $host;
         proxy_pass http://trello;
 
-        # CORS headers for /trello
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Credentials' 'true';
             add_header 'Access-Control-Allow-Origin' '*' always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
             add_header 'Access-Control-Allow-Headers' '*';
             add_header 'Content-Type' 'text/plain charset=UTF-8';
             return 200;
         }
 
         add_header 'Access-Control-Allow-Origin' '*' always;
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
         add_header 'Access-Control-Allow-Headers' '*';
         add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
     }
@@ -105,18 +129,17 @@ server {
         proxy_set_header Host $host;
         proxy_pass http://users;
 
-        # CORS headers for /users
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Credentials' 'true';
             add_header 'Access-Control-Allow-Origin' '*' always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
             add_header 'Access-Control-Allow-Headers' '*';
             add_header 'Content-Type' 'text/plain charset=UTF-8';
             return 200;
         }
 
         add_header 'Access-Control-Allow-Origin' '*' always;
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
         add_header 'Access-Control-Allow-Headers' '*';
         add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
     }

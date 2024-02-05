@@ -18,7 +18,7 @@ import { EventsService } from './events.service';
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
-  @Post('/')
+  @Post()
   @UseGuards(JwtAuthGuard)
   create(@Body() createEventDto: CreateEventDto, @Request() request: IRequest) {
     const userId = (request as any).user.id;
@@ -27,7 +27,7 @@ export class EventsController {
     return this.eventsService.create(createEventDto);
   }
 
-  @Get('/')
+  @Get()
   @UseGuards(JwtAuthGuard)
   findMany(@Request() request: IRequest) {
     const userId = (request as any).user.id;

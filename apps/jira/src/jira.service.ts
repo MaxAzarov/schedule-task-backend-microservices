@@ -65,11 +65,11 @@ export class JiraService {
     }
   }
 
-  async getProjectDetails(userId: string, key: string, token: string) {
+  async getProjectDetails(clientId: string, key: string, token: string) {
     const response = await firstValueFrom<ProjectDetails>(
       this.http
         .get(
-          `https://api.atlassian.com/ex/jira/${userId}/rest/api/2/project/${key}`,
+          `https://api.atlassian.com/ex/jira/${clientId}/rest/api/2/project/${key}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -178,7 +178,7 @@ export class JiraService {
     }
   }
 
-  async getAllIssues(userId: string, token: string) {
+  async getAllIssues(userId: number, token: string) {
     return await firstValueFrom<IssuesPaginated>(
       this.http
         .get(`https://api.atlassian.com/ex/jira/${userId}/rest/api/3/search`, {
@@ -249,7 +249,7 @@ export class JiraService {
     );
   }
 
-  // public async checkToken(userId: string) {
+  // public async checkToken(userId: number) {
   //   const integration = await this.integrationsService.findOne({
   //     userId,
   //     type: EventType.Jira,

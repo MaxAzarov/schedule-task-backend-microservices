@@ -30,7 +30,7 @@ export class Integration extends EntityHelper {
   user: User;
 
   @Column()
-  userId: string;
+  userId: number;
 
   @Column({ nullable: false })
   accessToken: string;

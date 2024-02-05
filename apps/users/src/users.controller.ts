@@ -32,4 +32,14 @@ export class UsersController {
   async findUser(fields: Partial<Pick<User, 'id' | 'email'>>) {
     return this.usersService.findOne(fields);
   }
+
+  @EventPattern('create_user')
+  async createUser(createUserDto: CreateUserDto): Promise<User> {
+    return this.usersService.create(createUserDto);
+  }
+
+  @EventPattern('find_all')
+  async findAll(): Promise<User[]> {
+    return this.usersService.findAll();
+  }
 }

@@ -1,4 +1,5 @@
-import { IsDate, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateEventDto {
   @IsString()
@@ -6,16 +7,18 @@ export class CreateEventDto {
 
   @IsDate()
   @IsOptional()
+  @Type(() => Date)
   start?: Date;
 
   @IsDate()
   @IsOptional()
+  @Type(() => Date)
   end?: Date;
 
   @IsOptional()
   resource?: unknown;
 
-  @IsNotEmpty()
-  @IsString()
-  userId: string;
+  @IsNumber()
+  @IsOptional()
+  userId: number;
 }

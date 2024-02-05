@@ -16,9 +16,8 @@ export class CreateIntegrationDto {
 
   @IsNotEmpty()
   @IsString()
-  userId: string;
+  userId: number;
 
-  // @IsNotEmpty()
   @IsEmpty()
   @IsString()
   clientId: string;

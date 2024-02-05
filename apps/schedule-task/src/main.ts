@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common/pipes';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -11,6 +12,8 @@ async function bootstrap() {
   const port = configService.get<number | string>('PORT');
 
   app.enableCors();
+
+  app.useGlobalPipes(new ValidationPipe());
 
   const config = new DocumentBuilder()
     .setTitle('Schedule Task')
