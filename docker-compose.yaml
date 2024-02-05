@@ -102,6 +102,7 @@ services:
       - TRELLO_HTTP_PORT=${TRELLO_HTTP_PORT}
       - USERS_HTTP_PORT=${USERS_HTTP_PORT}
       - NGINX_PORT=${NGINX_PORT}
+      - PORT=${PORT}
     volumes:
       - ./templates:/etc/nginx/templates
     ports:
