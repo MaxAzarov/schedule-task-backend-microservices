@@ -5,13 +5,12 @@ import { ConfigService } from '@nestjs/config';
 import { AUTH_SERVICE, JIRA_SERVICE, TRELLO_SERVICE } from '@app/common';
 import { IntegrationsController } from './integrations.controller';
 import { IntegrationsService } from './integrations.service';
-import { MessageGateway } from './message.gateway';
 import { EventsModule } from '../events/events.module';
 import { EventsService } from '../events/events.service';
 
 @Module({
   controllers: [IntegrationsController],
-  providers: [IntegrationsService, MessageGateway, EventsService],
+  providers: [IntegrationsService, EventsService],
   imports: [
     ClientsModule.registerAsync([
       {

@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import * as Joi from 'joi';
 
 import { HttpModule } from '@nestjs/axios';
-import { LoggerModule } from '@app/common';
+import { LoggerModule, MessageGateway } from '@app/common';
 import { TrelloController } from './trello.controller';
 import { TrelloService } from './trello.service';
 import { TrelloStrategy } from './strategy/trello-strategy';
@@ -22,7 +22,7 @@ import { TrelloStrategy } from './strategy/trello-strategy';
     HttpModule,
   ],
   controllers: [TrelloController],
-  providers: [TrelloService, TrelloStrategy],
+  providers: [TrelloService, TrelloStrategy, MessageGateway],
 })
 export class TrelloModule {
   configure(consumer: MiddlewareConsumer) {

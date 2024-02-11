@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsEnum, IsString, IsEmpty } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsEnum,
+  IsString,
+  IsEmpty,
+  IsNumber,
+  IsOptional,
+} from 'class-validator';
 import { EventType } from '@app/common';
 
 export class CreateIntegrationDto {
@@ -14,15 +21,16 @@ export class CreateIntegrationDto {
   @IsNotEmpty()
   refreshToken: string | null;
 
-  @IsNotEmpty()
   @IsString()
-  userId: number;
-
-  @IsEmpty()
-  @IsString()
+  @IsOptional()
   clientId: string;
 
+  @IsNumber()
+  @IsOptional()
+  userId?: number;
+
   @IsEmpty()
   @IsString()
+  @IsOptional()
   email?: string;
 }

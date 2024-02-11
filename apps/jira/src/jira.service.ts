@@ -282,7 +282,7 @@ export class JiraService {
       const transitions = await this.getTransitions(
         accessToken,
         clientId,
-        readyColumnId,
+        cardId,
       );
 
       const transitionId = transitions.transitions.find(

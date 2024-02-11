@@ -1,12 +1,6 @@
 import { firstValueFrom } from 'rxjs';
 import { EntityManager, FindOptionsSelect } from 'typeorm';
-import {
-  BadRequestException,
-  Inject,
-  // Inject,
-  Injectable,
-  // forwardRef,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { EventType, JIRA_SERVICE, TRELLO_SERVICE } from '@app/common';
 import { CreateIntegrationDto } from './dto/create-integration.dto';
@@ -29,7 +23,7 @@ export class IntegrationsService {
 
     // temporary solution
     const integration = await integrationsRepository.findOne({
-      where: { type: type, userId: userId },
+      where: { type: type, userId },
     });
 
     if (integration) {
@@ -82,11 +76,11 @@ export class IntegrationsService {
   ): Promise<{ clientId: string; email: string }> {
     if (type === EventType.Jira) {
       const data = await firstValueFrom(
-        this.jiraClient.emit('me', accessToken),
+        await this.jiraClient.send('me', accessToken),
       );
 
       const { emailAddress } = await firstValueFrom(
-        this.jiraClient.emit('myself', {
+        await this.jiraClient.send('myself', {
           accessToken,
           clientId: data[0].id,
         }),
@@ -95,7 +89,7 @@ export class IntegrationsService {
       return { clientId: data[0].id, email: emailAddress };
     } else if (type === EventType.Trello) {
       const { id, email } = await firstValueFrom(
-        this.trelloClient.emit('me', accessToken),
+        await this.trelloClient.send('me', accessToken),
       );
 
       return { clientId: id, email };
@@ -174,7 +168,7 @@ export class IntegrationsService {
     }
 
     let jiraEvents = [];
-    if (trelloIntegration) {
+    if (jiraIntegration) {
       const cards = await this.jiraClient.send('user_cards', {
         accessToken: jiraIntegration.accessToken,
         clientId: jiraIntegration.clientId,
@@ -202,15 +196,27 @@ export class IntegrationsService {
         type: EventType.Trello,
       });
 
-      return firstValueFrom(
-        this.trelloClient.send('mark_as_done', {
+      return await firstValueFrom(
+        await this.trelloClient.send('mark_as_done', {
           readyColumnId: integration.readyColumnId,
           accessToken: integration.accessToken,
           cardId,
         }),
       );
     } else if (type === EventType.Jira) {
-      // return this.jiraService.markAsDoneCard(userId, cardId);
+      const integration = await this.findOne({
+        userId,
+        type: EventType.Jira,
+      });
+
+      return await firstValueFrom(
+        await this.jiraClient.send('mark_as_done', {
+          readyColumnId: integration.readyColumnId,
+          accessToken: integration.accessToken,
+          cardId,
+          clientId: integration.clientId,
+        }),
+      );
     } else if (type === EventType.Custom) {
       return this.eventsService.delete(+cardId);
     }
@@ -220,7 +226,9 @@ export class IntegrationsService {
   async getTrelloBoards(userId: number) {
     const accessToken = await this.getUserAccessToken(userId, EventType.Trello);
 
-    return firstValueFrom(this.trelloClient.send('boards', accessToken));
+    return await firstValueFrom(
+      await this.trelloClient.send('boards', accessToken),
+    );
   }
 
   async getTrelloUserCards(userId: number) {
@@ -252,9 +260,10 @@ export class IntegrationsService {
       return [];
     }
 
-    return firstValueFrom(
-      this.trelloClient.emit('board_list', {
+    return await firstValueFrom(
+      await this.trelloClient.send('board_list', {
         userId,
+        projectId: integration.projectId,
         accessToken: integration.accessToken,
       }),
     );
@@ -268,8 +277,8 @@ export class IntegrationsService {
       return [];
     }
 
-    return firstValueFrom(
-      this.jiraClient.send('boards', {
+    return await firstValueFrom(
+      await this.jiraClient.send('boards', {
         clientId: integration.clientId,
         accessToken: integration.accessToken,
       }),
@@ -283,8 +292,8 @@ export class IntegrationsService {
       return [];
     }
 
-    return firstValueFrom(
-      this.jiraClient.emit('project_statuses', {
+    return await firstValueFrom(
+      await this.jiraClient.send('project_statuses', {
         projectId: integration.projectId,
         clientId: integration.clientId,
         accessToken: integration.accessToken,

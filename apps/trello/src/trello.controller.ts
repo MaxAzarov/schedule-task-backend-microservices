@@ -8,7 +8,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger/dist';
-import { EventType } from '@app/common';
+import { EventType, MessageGateway } from '@app/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TrelloService } from './trello.service';
 import { normalizeTrelloEvents } from './helpers/normalizeEvents';
@@ -21,7 +21,7 @@ import { GetBoardListDto } from './dto/get-board-list.dto';
 export class TrelloController {
   constructor(
     private readonly trelloService: TrelloService,
-    // private readonly messageGateway: MessageGateway,
+    private readonly messageGateway: MessageGateway,
   ) {}
 
   @Get('auth')
@@ -69,7 +69,7 @@ export class TrelloController {
   @Post('webhook/callback')
   @HttpCode(HttpStatus.OK)
   async handleWebhookpost(@Req() req, @Res() res) {
-    // this.messageGateway.emit({});
+    this.messageGateway.emit({});
 
     res.json({ ok: 'ok' });
   }

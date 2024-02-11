@@ -1,16 +1,16 @@
-import { IsEmpty, IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class UpdateIntegrationDto {
-  @IsEmpty()
   @IsString()
+  @IsOptional()
   projectId: string;
 
-  @IsEmpty()
   @IsString()
+  @IsOptional()
   todoColumnId: string;
 
-  @IsEmpty()
   @IsString()
+  @IsOptional()
   readyColumnId: string;
 
   @IsOptional()

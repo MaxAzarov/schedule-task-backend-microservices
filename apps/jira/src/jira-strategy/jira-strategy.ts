@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
-import * as crypto from 'crypto';
 import * as url from 'url';
 import { firstValueFrom, map } from 'rxjs';
 
@@ -13,15 +12,13 @@ export class JiraStrategy {
   ) {}
 
   generateUrl() {
-    const id = crypto.randomBytes(20).toString('hex');
-
     const consumerKey = this.configService.get<string>('JIRA_CLIENT_KEY');
 
     const callbackUrl = this.configService.get<string>('JIRA_CLIENT_CALLBACK');
     const scope =
       'write:jira-work write:webhook:jira read:webhook:jira read:jira-work read read:user.property:jira offline_access read:user:jira read:project:jira read:issue:jira read:issue:jira-software delete:board-scope.admin:jira-software delete:sprint:jira-software read:board-scope:jira-software read:board-scope.admin:jira-software read:build:jira-software read:deployment:jira-software read:epic:jira-software read:feature-flag:jira-software read:remote-link:jira-software read:source-code:jira-software read:sprint:jira-software write:board-scope:jira-software write:board-scope.admin:jira-software write:build:jira-software write:deployment:jira-software write:epic:jira-software write:feature-flag:jira-software write:issue:jira-software write:remote-link:jira-software write:source-code:jira-software write:sprint:jira-software read:project.avatar:jira read:project.component:jira read:project.email:jira read:project.feature:jira read:project.property:jira read:project-version:jira read:project-type:jira read:project-role:jira read:project-category:jira read:issue-type-hierarchy:jira read:application-role:jira read:issue-type:jira read:avatar:jira write:project:jira delete:project:jira read:group:jira delete:group:jira write:group:jira read:issue-details:jira';
 
-    return `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${consumerKey}&scope=${scope}&redirect_uri=${callbackUrl}&state=${id}&response_type=code&prompt=consent`;
+    return `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${consumerKey}&scope=${scope}&redirect_uri=${callbackUrl}&response_type=code&prompt=consent`;
   }
 
   async getUserTokens(reqUrl: string) {

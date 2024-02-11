@@ -40,6 +40,16 @@ export class IntegrationsController {
     return this.integrationsService.getUsersTasks((request as any).user.id);
   }
 
+  @Get('/:type')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  find(@Request() request: IRequest, @Param('type') type?: EventType) {
+    return this.integrationsService.findOne({
+      type,
+      userId: (request as any).user.id,
+    });
+  }
+
   @Put('/event/:eventId/done')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -53,16 +63,6 @@ export class IntegrationsController {
       dto.type,
       eventId,
     );
-  }
-
-  @Get('/:type')
-  @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.OK)
-  find(@Request() request: IRequest, @Param('type') type?: EventType) {
-    return this.integrationsService.findOne({
-      type,
-      userId: (request as any).user.id,
-    });
   }
 
   @Delete('/:id')
@@ -80,11 +80,13 @@ export class IntegrationsController {
   }
 
   @Get('/trello/boards')
+  @UseGuards(JwtAuthGuard)
   getTrelloBoards(@Request() request: IRequest) {
     return this.integrationsService.getTrelloBoards((request as any).user.id);
   }
 
   @Get('/trello/user/cards')
+  @UseGuards(JwtAuthGuard)
   getUserCards(@Request() request: IRequest) {
     return this.integrationsService.getTrelloUserCards(
       (request as any).user.id,
@@ -92,6 +94,7 @@ export class IntegrationsController {
   }
 
   @Get('/trello/board/list')
+  @UseGuards(JwtAuthGuard)
   getTrelloBoardList(@Request() request: IRequest) {
     return this.integrationsService.getTrelloBoardList(
       (request as any).user.id,
@@ -99,12 +102,14 @@ export class IntegrationsController {
   }
 
   // jira
-  @Get('/jira/board/list')
+  @Get('/jira/boards')
+  @UseGuards(JwtAuthGuard)
   getJiraBoardList(@Request() request: IRequest) {
     return this.integrationsService.getJiraBoards((request as any).user.id);
   }
 
   @Get('/jira/project/statuses')
+  @UseGuards(JwtAuthGuard)
   getJiraProjectStatuses(@Request() request: IRequest) {
     return this.integrationsService.getJiraProjectStatuses(
       (request as any).user.id,

@@ -21,6 +21,9 @@ upstream users {
 server {
     listen ${NGINX_PORT};
 
+    proxy_buffers 8 32k;
+    proxy_buffer_size 64k;
+
     location /integrations/ {
         # Match any request that starts with /integrations/ followed by an ID
         # The ID will be captured and available as $1 in the proxy_pass directive
@@ -33,15 +36,31 @@ server {
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Credentials' 'true';
             add_header 'Access-Control-Allow-Origin' '*' always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
             add_header 'Access-Control-Allow-Headers' '*';
             add_header 'Content-Type' 'text/plain charset=UTF-8';
             return 200;
         }
 
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
         add_header 'Access-Control-Allow-Headers' '*';
         add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
+    }
+
+    location /jira/auth/callback {
+        proxy_set_header Host $host;
+        proxy_pass http://jira;
+
+        # Allow redirection for /jira/auth/callback
+        proxy_redirect default;
+    }
+
+    location /trello/auth/callback {
+        proxy_set_header Host $host;
+        proxy_pass http://trello;
+
+        # Allow redirection for /trello/auth/callback
+        proxy_redirect default;
     }
 
     location /events/ {
@@ -56,14 +75,14 @@ server {
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Credentials' 'true';
             add_header 'Access-Control-Allow-Origin' '*' always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
             add_header 'Access-Control-Allow-Headers' '*';
             add_header 'Content-Type' 'text/plain charset=UTF-8';
             return 200;
         }
 
         add_header 'Access-Control-Allow-Origin' '*' always;
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
         add_header 'Access-Control-Allow-Headers' '*';
         add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
     }
@@ -75,14 +94,14 @@ server {
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Credentials' 'true';
             add_header 'Access-Control-Allow-Origin' '*' always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
             add_header 'Access-Control-Allow-Headers' '*';
             add_header 'Content-Type' 'text/plain charset=UTF-8';
             return 200;
         }
 
         add_header 'Access-Control-Allow-Origin' '*' always;
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
         add_header 'Access-Control-Allow-Headers' '*';
         add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
     }
@@ -94,33 +113,37 @@ server {
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Credentials' 'true';
             add_header 'Access-Control-Allow-Origin' '*' always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
             add_header 'Access-Control-Allow-Headers' '*';
             add_header 'Content-Type' 'text/plain charset=UTF-8';
             return 200;
         }
 
         add_header 'Access-Control-Allow-Origin' '*' always;
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
         add_header 'Access-Control-Allow-Headers' '*';
         add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
     }
 
-    location /trello {
+    location /trello/ {
+         # Match any request that starts with /events/ followed by an ID
+        # The ID will be captured and available as $1 in the proxy_pass directive
+        rewrite ^/events/(.*)$ /$1 break;
+
         proxy_set_header Host $host;
         proxy_pass http://trello;
 
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Credentials' 'true';
             add_header 'Access-Control-Allow-Origin' '*' always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
             add_header 'Access-Control-Allow-Headers' '*';
             add_header 'Content-Type' 'text/plain charset=UTF-8';
             return 200;
         }
 
         add_header 'Access-Control-Allow-Origin' '*' always;
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
         add_header 'Access-Control-Allow-Headers' '*';
         add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
     }
@@ -132,14 +155,14 @@ server {
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Credentials' 'true';
             add_header 'Access-Control-Allow-Origin' '*' always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
             add_header 'Access-Control-Allow-Headers' '*';
             add_header 'Content-Type' 'text/plain charset=UTF-8';
             return 200;
         }
 
         add_header 'Access-Control-Allow-Origin' '*' always;
-        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, OPTIONS';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
         add_header 'Access-Control-Allow-Headers' '*';
         add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
     }
