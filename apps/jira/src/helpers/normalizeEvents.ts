@@ -1,4 +1,4 @@
-import { Event as BaseEvent, EventType } from '@app/common';
+import { BaseEvent, EventType } from '@app/common';
 import { Issue } from '../types/Issues';
 
 export function normalizeJiraEvents(events: Issue[]): BaseEvent[] {

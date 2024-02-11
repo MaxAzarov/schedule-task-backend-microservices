@@ -1,4 +1,4 @@
-export interface Event {
+export interface BaseEvent {
   allDay?: boolean | undefined;
   title: string;
   start?: Date | undefined;

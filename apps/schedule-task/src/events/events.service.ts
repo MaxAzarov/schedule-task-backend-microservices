@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
+import { Event } from '@app/common/entities';
 import { CreateEventDto } from './dto/create-event.dto';
-import { Event } from './entities/event.entity';
 import { UpdateEventDto } from './dto/update-event.dto';
 
 @Injectable()

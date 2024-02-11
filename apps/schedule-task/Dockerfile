@@ -28,7 +28,7 @@ COPY package.json ./
 COPY package-lock.json ./
 COPY ./../../wait-for-it.sh /opt/wait-for-it.sh
 
-RUN npm install --prod
+RUN npm install
 
 COPY --from=development /usr/src/app/dist ./dist
 

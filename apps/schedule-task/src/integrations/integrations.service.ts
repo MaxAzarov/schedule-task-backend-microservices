@@ -2,9 +2,13 @@ import { firstValueFrom } from 'rxjs';
 import { EntityManager, FindOptionsSelect } from 'typeorm';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { EventType, JIRA_SERVICE, TRELLO_SERVICE } from '@app/common';
+import {
+  EventType,
+  Integration,
+  JIRA_SERVICE,
+  TRELLO_SERVICE,
+} from '@app/common';
 import { CreateIntegrationDto } from './dto/create-integration.dto';
-import { Integration } from './entities/Integration.entity';
 import { EventsService } from '../events/events.service';
 import { UpdateIntegrationDto } from './dto/update-integration.dto';
 import { normalizeCustomEvents } from '../events/helpers/normalizeEvents';

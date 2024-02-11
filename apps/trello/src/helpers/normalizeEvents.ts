@@ -1,4 +1,4 @@
-import { Event as BaseEvent, EventType } from '@app/common';
+import { BaseEvent, EventType } from '@app/common';
 import { Card } from '../types/Card';
 
 export function normalizeTrelloEvents(events: Card[]): BaseEvent[] {

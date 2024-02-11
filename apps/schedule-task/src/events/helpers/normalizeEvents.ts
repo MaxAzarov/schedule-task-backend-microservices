@@ -1,6 +1,5 @@
-import { Event as BaseEvent } from '@app/common';
-
-import { Event } from '../entities/event.entity';
+import { BaseEvent } from '@app/common';
+import { Event } from '@app/common/entities';
 
 export function normalizeCustomEvents(events: Event[]): BaseEvent[] {
   return events.map((event) => {
