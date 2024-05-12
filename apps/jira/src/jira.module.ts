@@ -1,9 +1,8 @@
 import { Module, MiddlewareConsumer } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import * as Joi from 'joi';
-import { AUTH_SERVICE, LoggerModule, MessageGateway } from '@app/common';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { LoggerModule, MessageGateway } from '@app/common';
 import { JiraStrategy } from './jira-strategy/jira-strategy';
 import { JiraController } from './jira.controller';
 import { JiraService } from './jira.service';
@@ -11,19 +10,6 @@ import { JiraService } from './jira.service';
 @Module({
   imports: [
     HttpModule,
-    ClientsModule.registerAsync([
-      {
-        name: AUTH_SERVICE,
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
-          options: {
-            host: configService.get('AUTH_HOST'),
-            port: configService.get('AUTH_TCP_PORT'),
-          },
-        }),
-        inject: [ConfigService],
-      },
-    ]),
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
