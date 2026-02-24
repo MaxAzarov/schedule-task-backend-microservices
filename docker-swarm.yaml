@@ -1,0 +1,292 @@
+# Stack-deploy compatible: build & tag images first, then deploy.
+#
+# 1) Build and tag images (run from repo root):
+#    docker build -t my_stack/auth:latest -f apps/auth/Dockerfile --target development .
+#    docker build -t my_stack/jira:latest -f apps/jira/Dockerfile --target development .
+#    docker build -t my_stack/trello:latest -f apps/trello/Dockerfile --target development .
+#    docker build -t my_stack/users:latest -f apps/users/Dockerfile --target development .
+#    docker build -t my_stack/schedule:latest -f apps/schedule-task/Dockerfile --target development .
+#
+# 3) export: export $(grep -v '^#' .env | xargs)
+# 2) Deploy the stack:
+#    docker stack deploy -c docker-swarm.yaml my_stack
+#
+# 3) Remove the stack:
+#    docker stack rm my_stack
+#
+version: '3.8'
+services:
+  auth:
+    image: my_stack/auth:latest
+    command: npm run start:dev auth
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_HOST=db
+      - DATABASE_PORT=${DATABASE_PORT:-5433}
+      - DATABASE_TYPE=${DATABASE_TYPE:-postgres}
+      - DATABASE_USERNAME=${DATABASE_USERNAME:-postgres}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME:-scheduleTask}
+      - DATABASE_SYNCHRONIZE=${DATABASE_SYNCHRONIZE:-false}
+      - DATABASE_MAX_CONNECTIONS=${DATABASE_MAX_CONNECTIONS:-100}
+      - AUTH_TOKEN_SECRET=${AUTH_TOKEN_SECRET}
+      - AUTH_HTTP_PORT=${AUTH_HTTP_PORT:-3001}
+      - AUTH_TCP_PORT=${AUTH_TCP_PORT:-3002}
+      - AUTH_HOST=${AUTH_HOST:-auth}
+      - USERS_HTTP_PORT=${USERS_HTTP_PORT:-3003}
+      - USERS_TCP_PORT=${USERS_TCP_PORT:-3004}
+      - USERS_HOST=${USERS_HOST:-users}
+      - TRELLO_CLIENT_ID=${TRELLO_CLIENT_ID}
+      - TRELLO_CLIENT_SECRET=${TRELLO_CLIENT_SECRET}
+      - TRELLO_CLIENT_CALLBACK=${TRELLO_CLIENT_CALLBACK}
+      - TRELLO_WEBHOOK_CALLBACK=${TRELLO_WEBHOOK_CALLBACK}
+      - TRELLO_HTTP_PORT=${TRELLO_HTTP_PORT:-3005}
+      - TRELLO_TCP_PORT=${TRELLO_TCP_PORT:-3006}
+      - TRELLO_HOST=${TRELLO_HOST:-trello}
+      - JIRA_CLIENT_KEY=${JIRA_CLIENT_KEY}
+      - JIRA_API_TOKEN=${JIRA_API_TOKEN}
+      - JIRA_CLIENT_SECRET=${JIRA_CLIENT_SECRET}
+      - JIRA_CLIENT_CALLBACK=${JIRA_CLIENT_CALLBACK}
+      - JIRA_WEBHOOK_CALLBACK=${JIRA_WEBHOOK_CALLBACK}
+      - JIRA_HTTP_PORT=${JIRA_HTTP_PORT:-3007}
+      - JIRA_TCP_PORT=${JIRA_TCP_PORT:-3008}
+      - JIRA_HOST=${JIRA_HOST:-jira}
+      - PORT=${PORT:-3000}
+      - NGINX_PORT=${NGINX_PORT:-8080}
+    ports:
+      - target: ${AUTH_TCP_PORT:-3001}
+        published: ${AUTH_TCP_PORT:-3001}
+        protocol: tcp
+      - target: ${AUTH_HTTP_PORT:-3000}
+        published: ${AUTH_HTTP_PORT:-3000}
+        protocol: tcp
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - db
+
+  jira:
+    image: my_stack/jira:latest
+    command: npm run start:dev jira
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_HOST=db
+      - DATABASE_PORT=${DATABASE_PORT:-5433}
+      - DATABASE_TYPE=${DATABASE_TYPE:-postgres}
+      - DATABASE_USERNAME=${DATABASE_USERNAME:-postgres}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME:-scheduleTask}
+      - DATABASE_SYNCHRONIZE=${DATABASE_SYNCHRONIZE:-false}
+      - DATABASE_MAX_CONNECTIONS=${DATABASE_MAX_CONNECTIONS:-100}
+      - AUTH_TOKEN_SECRET=${AUTH_TOKEN_SECRET}
+      - AUTH_HTTP_PORT=${AUTH_HTTP_PORT:-3001}
+      - AUTH_TCP_PORT=${AUTH_TCP_PORT:-3002}
+      - AUTH_HOST=${AUTH_HOST:-auth}
+      - USERS_HTTP_PORT=${USERS_HTTP_PORT:-3003}
+      - USERS_TCP_PORT=${USERS_TCP_PORT:-3004}
+      - USERS_HOST=${USERS_HOST:-users}
+      - TRELLO_CLIENT_ID=${TRELLO_CLIENT_ID}
+      - TRELLO_CLIENT_SECRET=${TRELLO_CLIENT_SECRET}
+      - TRELLO_CLIENT_CALLBACK=${TRELLO_CLIENT_CALLBACK}
+      - TRELLO_WEBHOOK_CALLBACK=${TRELLO_WEBHOOK_CALLBACK}
+      - TRELLO_HTTP_PORT=${TRELLO_HTTP_PORT:-3005}
+      - TRELLO_TCP_PORT=${TRELLO_TCP_PORT:-3006}
+      - TRELLO_HOST=${TRELLO_HOST:-trello}
+      - JIRA_CLIENT_KEY=${JIRA_CLIENT_KEY}
+      - JIRA_API_TOKEN=${JIRA_API_TOKEN}
+      - JIRA_CLIENT_SECRET=${JIRA_CLIENT_SECRET}
+      - JIRA_CLIENT_CALLBACK=${JIRA_CLIENT_CALLBACK}
+      - JIRA_WEBHOOK_CALLBACK=${JIRA_WEBHOOK_CALLBACK}
+      - JIRA_HTTP_PORT=${JIRA_HTTP_PORT:-3007}
+      - JIRA_TCP_PORT=${JIRA_TCP_PORT:-3008}
+      - JIRA_HOST=${JIRA_HOST:-jira}
+      - PORT=${PORT:-3000}
+      - NGINX_PORT=${NGINX_PORT:-8080}
+    ports:
+      - target: ${JIRA_HTTP_PORT:-3010}
+        published: ${JIRA_HTTP_PORT:-3010}
+        protocol: tcp
+      - target: ${JIRA_TCP_PORT:-3011}
+        published: ${JIRA_TCP_PORT:-3011}
+        protocol: tcp
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - db
+
+  trello:
+    image: my_stack/trello:latest
+    command: npm run start:dev trello
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_HOST=db
+      - DATABASE_PORT=${DATABASE_PORT:-5433}
+      - DATABASE_TYPE=${DATABASE_TYPE:-postgres}
+      - DATABASE_USERNAME=${DATABASE_USERNAME:-postgres}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME:-scheduleTask}
+      - DATABASE_SYNCHRONIZE=${DATABASE_SYNCHRONIZE:-false}
+      - DATABASE_MAX_CONNECTIONS=${DATABASE_MAX_CONNECTIONS:-100}
+      - AUTH_TOKEN_SECRET=${AUTH_TOKEN_SECRET}
+      - AUTH_HTTP_PORT=${AUTH_HTTP_PORT:-3001}
+      - AUTH_TCP_PORT=${AUTH_TCP_PORT:-3002}
+      - AUTH_HOST=${AUTH_HOST:-auth}
+      - USERS_HTTP_PORT=${USERS_HTTP_PORT:-3003}
+      - USERS_TCP_PORT=${USERS_TCP_PORT:-3004}
+      - USERS_HOST=${USERS_HOST:-users}
+      - TRELLO_CLIENT_ID=${TRELLO_CLIENT_ID}
+      - TRELLO_CLIENT_SECRET=${TRELLO_CLIENT_SECRET}
+      - TRELLO_CLIENT_CALLBACK=${TRELLO_CLIENT_CALLBACK}
+      - TRELLO_WEBHOOK_CALLBACK=${TRELLO_WEBHOOK_CALLBACK}
+      - TRELLO_HTTP_PORT=${TRELLO_HTTP_PORT:-3005}
+      - TRELLO_TCP_PORT=${TRELLO_TCP_PORT:-3006}
+      - TRELLO_HOST=${TRELLO_HOST:-trello}
+      - JIRA_CLIENT_KEY=${JIRA_CLIENT_KEY}
+      - JIRA_API_TOKEN=${JIRA_API_TOKEN}
+      - JIRA_CLIENT_SECRET=${JIRA_CLIENT_SECRET}
+      - JIRA_CLIENT_CALLBACK=${JIRA_CLIENT_CALLBACK}
+      - JIRA_WEBHOOK_CALLBACK=${JIRA_WEBHOOK_CALLBACK}
+      - JIRA_HTTP_PORT=${JIRA_HTTP_PORT:-3007}
+      - JIRA_TCP_PORT=${JIRA_TCP_PORT:-3008}
+      - JIRA_HOST=${JIRA_HOST:-jira}
+      - PORT=${PORT:-3000}
+      - NGINX_PORT=${NGINX_PORT:-8080}
+    ports:
+      - target: ${TRELLO_HTTP_PORT:-3020}
+        published: ${TRELLO_HTTP_PORT:-3020}
+        protocol: tcp
+      - target: ${TRELLO_TCP_PORT:-3021}
+        published: ${TRELLO_TCP_PORT:-3021}
+        protocol: tcp
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - db
+
+  users:
+    image: my_stack/users:latest
+    command: npm run start:dev users
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_HOST=db
+      - DATABASE_PORT=${DATABASE_PORT:-5433}
+      - DATABASE_TYPE=${DATABASE_TYPE:-postgres}
+      - DATABASE_USERNAME=${DATABASE_USERNAME:-postgres}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME:-scheduleTask}
+      - DATABASE_SYNCHRONIZE=${DATABASE_SYNCHRONIZE:-false}
+      - DATABASE_MAX_CONNECTIONS=${DATABASE_MAX_CONNECTIONS:-100}
+      - AUTH_TOKEN_SECRET=${AUTH_TOKEN_SECRET}
+      - AUTH_HTTP_PORT=${AUTH_HTTP_PORT:-3001}
+      - AUTH_TCP_PORT=${AUTH_TCP_PORT:-3002}
+      - AUTH_HOST=${AUTH_HOST:-auth}
+      - USERS_HTTP_PORT=${USERS_HTTP_PORT:-3003}
+      - USERS_TCP_PORT=${USERS_TCP_PORT:-3004}
+      - USERS_HOST=${USERS_HOST:-users}
+      - TRELLO_CLIENT_ID=${TRELLO_CLIENT_ID}
+      - TRELLO_CLIENT_SECRET=${TRELLO_CLIENT_SECRET}
+      - TRELLO_CLIENT_CALLBACK=${TRELLO_CLIENT_CALLBACK}
+      - TRELLO_WEBHOOK_CALLBACK=${TRELLO_WEBHOOK_CALLBACK}
+      - TRELLO_HTTP_PORT=${TRELLO_HTTP_PORT:-3005}
+      - TRELLO_TCP_PORT=${TRELLO_TCP_PORT:-3006}
+      - TRELLO_HOST=${TRELLO_HOST:-trello}
+      - JIRA_CLIENT_KEY=${JIRA_CLIENT_KEY}
+      - JIRA_API_TOKEN=${JIRA_API_TOKEN}
+      - JIRA_CLIENT_SECRET=${JIRA_CLIENT_SECRET}
+      - JIRA_CLIENT_CALLBACK=${JIRA_CLIENT_CALLBACK}
+      - JIRA_WEBHOOK_CALLBACK=${JIRA_WEBHOOK_CALLBACK}
+      - JIRA_HTTP_PORT=${JIRA_HTTP_PORT:-3007}
+      - JIRA_TCP_PORT=${JIRA_TCP_PORT:-3008}
+      - JIRA_HOST=${JIRA_HOST:-jira}
+      - PORT=${PORT:-3000}
+      - NGINX_PORT=${NGINX_PORT:-8080}
+    ports:
+      - target: ${USERS_HTTP_PORT:-3030}
+        published: ${USERS_HTTP_PORT:-3030}
+        protocol: tcp
+      - target: ${USERS_TCP_PORT:-3031}
+        published: ${USERS_TCP_PORT:-3031}
+        protocol: tcp
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - db
+
+  schedule:
+    image: my_stack/schedule:latest
+    command: npm run start:dev schedule-task
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_HOST=db
+      - DATABASE_PORT=${DATABASE_PORT:-5433}
+      - DATABASE_TYPE=${DATABASE_TYPE:-postgres}
+      - DATABASE_USERNAME=${DATABASE_USERNAME:-postgres}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME:-scheduleTask}
+      - DATABASE_SYNCHRONIZE=${DATABASE_SYNCHRONIZE:-false}
+      - DATABASE_MAX_CONNECTIONS=${DATABASE_MAX_CONNECTIONS:-100}
+      - AUTH_TOKEN_SECRET=${AUTH_TOKEN_SECRET}
+      - AUTH_HTTP_PORT=${AUTH_HTTP_PORT:-3001}
+      - AUTH_TCP_PORT=${AUTH_TCP_PORT:-3002}
+      - AUTH_HOST=${AUTH_HOST:-auth}
+      - USERS_HTTP_PORT=${USERS_HTTP_PORT:-3003}
+      - USERS_TCP_PORT=${USERS_TCP_PORT:-3004}
+      - USERS_HOST=${USERS_HOST:-users}
+      - TRELLO_CLIENT_ID=${TRELLO_CLIENT_ID}
+      - TRELLO_CLIENT_SECRET=${TRELLO_CLIENT_SECRET}
+      - TRELLO_CLIENT_CALLBACK=${TRELLO_CLIENT_CALLBACK}
+      - TRELLO_WEBHOOK_CALLBACK=${TRELLO_WEBHOOK_CALLBACK}
+      - TRELLO_HTTP_PORT=${TRELLO_HTTP_PORT:-3005}
+      - TRELLO_TCP_PORT=${TRELLO_TCP_PORT:-3006}
+      - TRELLO_HOST=${TRELLO_HOST:-trello}
+      - JIRA_CLIENT_KEY=${JIRA_CLIENT_KEY}
+      - JIRA_API_TOKEN=${JIRA_API_TOKEN}
+      - JIRA_CLIENT_SECRET=${JIRA_CLIENT_SECRET}
+      - JIRA_CLIENT_CALLBACK=${JIRA_CLIENT_CALLBACK}
+      - JIRA_WEBHOOK_CALLBACK=${JIRA_WEBHOOK_CALLBACK}
+      - JIRA_HTTP_PORT=${JIRA_HTTP_PORT:-3007}
+      - JIRA_TCP_PORT=${JIRA_TCP_PORT:-3008}
+      - JIRA_HOST=${JIRA_HOST:-jira}
+      - PORT=${PORT:-3000}
+      - NGINX_PORT=${NGINX_PORT:-8080}
+    ports:
+      - target: ${PORT:-5000}
+        published: ${PORT:-5000}
+        protocol: tcp
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - db
+
+  db:
+    image: postgres:14.2
+    command: postgres -p 5433
+    ports:
+      - target: 5433
+        published: ${DATABASE_PORT:-5433}
+        protocol: tcp
+    environment:
+      - POSTGRES_USER=${DATABASE_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=${DATABASE_NAME:-scheduleTask}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  nginx:
+    image: nginx:latest
+    environment:
+      - AUTH_HTTP_PORT=${AUTH_HTTP_PORT:-3000}
+      - JIRA_HTTP_PORT=${JIRA_HTTP_PORT:-3010}
+      - TRELLO_HTTP_PORT=${TRELLO_HTTP_PORT:-3020}
+      - USERS_HTTP_PORT=${USERS_HTTP_PORT:-3030}
+      - NGINX_PORT=${NGINX_PORT:-80}
+      - PORT=${PORT:-5000}
+    volumes:
+      - ./templates:/etc/nginx/templates
+    ports:
+      - target: ${NGINX_PORT:-80}
+        published: ${NGINX_PORT:-80}
+        protocol: tcp
+
+volumes:
+  db_data:

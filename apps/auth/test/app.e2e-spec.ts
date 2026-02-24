@@ -4,14 +4,14 @@ import * as request from 'supertest';
 import { AuthModule } from './../src/auth.module';
 
 describe('AuthController (e2e)', () => {
-  let app: INestApplication;
+  let app: INestApplication<any>;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AuthModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication<any>();
     await app.init();
   });
 

@@ -14,6 +14,6 @@ async function bootstrap() {
     },
   });
   await app.startAllMicroservices();
-  await app.listen(configService.get('TRELLO_HTTP_PORT'));
+  await app.listen(configService.get('TRELLO_HTTP_PORT'), configService.get('TRELLO_HOST'));
 }
 bootstrap();

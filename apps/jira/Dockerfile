@@ -1,4 +1,4 @@
-FROM node:alpine As development
+FROM node:24-alpine3.22 As development
 
 WORKDIR /usr/src/app
 
@@ -16,7 +16,7 @@ RUN cd apps/jira && npm install -f
 
 RUN npm run build jira
 
-FROM node:alpine as production
+FROM node:24-alpine3.22 as production
 
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}

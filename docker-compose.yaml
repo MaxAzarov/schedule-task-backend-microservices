@@ -81,8 +81,9 @@ services:
 
   db:
     image: postgres:14.2
+    command: postgres -p 5433
     ports:
-      - ${DATABASE_PORT}:5432
+      - ${DATABASE_PORT}:5433
     container_name: schedule-task-db
     restart: unless-stopped
     environment:

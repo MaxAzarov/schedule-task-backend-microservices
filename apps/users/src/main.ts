@@ -15,6 +15,6 @@ async function bootstrap() {
     },
   });
   await app.startAllMicroservices();
-  await app.listen(configService.get('USERS_HTTP_PORT'));
+  await app.listen(configService.get('USERS_HTTP_PORT'), configService.get('USERS_HOST'));
 }
 bootstrap();

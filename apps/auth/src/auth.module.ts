@@ -14,11 +14,11 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       isGlobal: true,
       validationSchema: Joi.object({
         AUTH_TOKEN_SECRET: Joi.string().required(),
-        AUTH_HTTP_PORT: Joi.number().required(),
+        AUTH_HTTP_PORT: Joi.number().integer().min(1).max(65535).required(),
         AUTH_HOST: Joi.string().required(),
-        AUTH_TCP_PORT: Joi.number().required(),
+        AUTH_TCP_PORT: Joi.number().integer().min(1).max(65535).required(),
         USERS_HOST: Joi.string().required(),
-        USERS_TCP_PORT: Joi.number().required(),
+        USERS_TCP_PORT: Joi.number().integer().min(1).max(65535).required(),
       }),
     }),
     ClientsModule.registerAsync([

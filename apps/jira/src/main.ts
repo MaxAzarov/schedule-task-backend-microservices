@@ -14,6 +14,6 @@ async function bootstrap() {
     },
   });
   await app.startAllMicroservices();
-  await app.listen(configService.get('JIRA_HTTP_PORT'));
+  await app.listen(configService.get('JIRA_HTTP_PORT'), configService.get('JIRA_HOST'));
 }
 bootstrap();

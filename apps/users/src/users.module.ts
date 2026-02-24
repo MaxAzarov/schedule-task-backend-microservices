@@ -11,8 +11,8 @@ import { UsersService } from './users.service';
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
-        USERS_HTTP_PORT: Joi.number().required(),
-        USERS_TCP_PORT: Joi.number().required(),
+        USERS_HTTP_PORT: Joi.number().integer().min(1).max(65535).required(),
+        USERS_TCP_PORT: Joi.number().integer().min(1).max(65535).required(),
         USERS_HOST: Joi.string().required(),
       }),
     }),

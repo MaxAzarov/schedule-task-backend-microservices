@@ -38,7 +38,7 @@ describe('TrelloStrategy', () => {
 
       const userTokens = await trelloStrategy.getUserTokens(mockUrl);
 
-      expect(trelloStrategy.getAccessToken).toBeCalledWith(
+      expect(trelloStrategy.getAccessToken).toHaveBeenCalledWith(
         'mockToken',
         mockRequestTokenSecret,
         'mockVerifier',
@@ -59,7 +59,7 @@ describe('TrelloStrategy', () => {
 
       const requestToken = await trelloStrategy.getRequestToken();
 
-      expect(trelloStrategy.oauthClient.getOAuthRequestToken).toBeCalled();
+      expect(trelloStrategy.oauthClient.getOAuthRequestToken).toHaveBeenCalled();
       expect(requestToken).toEqual({
         token: 'mockToken',
         secret: 'mockSecret',
@@ -97,7 +97,7 @@ describe('TrelloStrategy', () => {
         'mockVerifier',
       );
 
-      expect(trelloStrategy.oauthClient.getOAuthAccessToken).toBeCalledWith(
+      expect(trelloStrategy.oauthClient.getOAuthAccessToken).toHaveBeenCalledWith(
         'mockToken',
         'mockSecret',
         'mockVerifier',
