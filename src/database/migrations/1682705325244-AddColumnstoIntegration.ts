@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddColumnstoIntegration1682705325244
-  implements MigrationInterface
-{
+export class AddColumnstoIntegration1682705325244 implements MigrationInterface {
   name = 'AddColumnstoIntegration1682705325244';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

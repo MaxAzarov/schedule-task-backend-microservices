@@ -1,5 +1,6 @@
-FROM node:16.20-buster-slim
+FROM node:24-alpine3.22
 
+RUN apk add --no-cache bash
 RUN npm i -g @nestjs/cli typescript ts-node
 
 COPY package*.json /tmp/app/
@@ -14,4 +15,6 @@ WORKDIR /usr/src/app
 RUN rm -rf .env && cp env-example .env
 RUN npm run build
 
-CMD ["/bin/bash", "/opt/startup.local.sh"]
+RUN chmod +x /opt/startup.local.sh /opt/wait-for-it.sh
+ENTRYPOINT []
+CMD ["/bin/sh", "/opt/startup.local.sh"]
